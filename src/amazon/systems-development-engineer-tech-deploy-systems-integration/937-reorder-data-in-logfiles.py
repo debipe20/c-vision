@@ -23,5 +23,28 @@ Output: ["g1 act car","a8 act zoo","ab1 off key dog","a1 9 2 3 1","zo4 4 7"]
 """
 
 
-def reorder_log_files():
+def reorder_log_files(logs):
+    letter_logs = []
+    digit_logs = []
     
+    for log in logs:
+        identifier, content = log.split(" ", 1)
+        
+        if content[0].isdigit():
+            digit_logs.append(log)
+            
+        else: letter_logs.append(log)
+        
+    letter_logs.sort(key = lambda log: (log.split(" ", 1)[1], log.split(" ", 1)[0]))
+
+    return letter_logs + digit_logs
+
+if __name__ == "__main__":
+        
+    logs = ["dig1 8 1 5 1",
+        "let1 art can",
+        "dig2 3 6",
+        "let2 own kit dig",
+        "let3 art zero"]
+
+    print(reorder_log_files(logs))
