@@ -1,3 +1,6 @@
+### https://www.reddit.com/r/leetcode/comments/19bcinb/amazon_most_asked_questions/
+### https://www.reddit.com/answers/20cac533-40a0-4ded-bb17-23ab13ca14e6/?q=List%20of%20Amazon%20most%20asked%20interview%20questions&source=PDP
+
 ##LeetCode:
 https://github.com/krishnadey30/LeetCode-Questions-CompanyWise
 
