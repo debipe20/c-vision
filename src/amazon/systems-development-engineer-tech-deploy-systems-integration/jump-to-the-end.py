@@ -22,10 +22,10 @@ def max_jumps_to_end(arr):
             return memo[i]
 
         max_jumps = -1  # Start with invalid case
-        for j in range(i + 1, min(n, i + arr[i] + 1)):
-            sub_jumps = dfs(j)
+        for j in range(i + 1, min(n, i + arr[i] + 1)): #j ranges from i+1 to i + arr[i] (but not exceeding n).
+            sub_jumps = dfs(j) #Recursively compute max jumps needed from index j.
             if sub_jumps != -1:
-                max_jumps = max(max_jumps, 1 + sub_jumps)
+                max_jumps = max(max_jumps, 1 + sub_jumps) # If we can reach the end from j, update the max jumps at index i. 1 + sub_jumps: one jump to reach j, plus whatever it takes from there to the end.
 
         memo[i] = max_jumps
         return max_jumps
