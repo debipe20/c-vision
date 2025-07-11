@@ -7,7 +7,7 @@ A subtree of a binary tree is a tree that consists of a node in tree and all of 
 Input: root = [3,4,5,1,2], subRoot = [4,1,2]
 Output: true
 """
-
+from collections import deque
 
 class TreeNode:
     def __init__(self, val=0, left=None, right=None):
