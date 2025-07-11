@@ -34,7 +34,7 @@ def reorder_log_files(logs):
             digit_logs.append(log)
             
         else: letter_logs.append(log)
-        
+             
     letter_logs.sort(key = lambda log: (log.split(" ", 1)[1], log.split(" ", 1)[0]))
 
     return letter_logs + digit_logs
