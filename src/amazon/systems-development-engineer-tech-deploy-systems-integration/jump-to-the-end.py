@@ -10,6 +10,7 @@ Your task is to:
 2. If possible, return the maximum & minimum number of jumps used to reach the end.
 3. If not possible, return -1
 """
+        
 
 def max_jumps_to_end(arr):
     n = len(arr)
@@ -24,7 +25,7 @@ def max_jumps_to_end(arr):
         max_jumps = -1  # Start with invalid case
         for j in range(i + 1, min(n, i + arr[i] + 1)): #j ranges from i+1 to i + arr[i] (but not exceeding n).
             sub_jumps = dfs(j) #Recursively compute max jumps needed from index j.
-            if sub_jumps != -1:
+            if sub_jumps != -1: #If none of the jumps from position i lead to a valid solution, then max_jumps stays -1.
                 max_jumps = max(max_jumps, 1 + sub_jumps) # If we can reach the end from j, update the max jumps at index i. 1 + sub_jumps: one jump to reach j, plus whatever it takes from there to the end.
 
         memo[i] = max_jumps
@@ -32,21 +33,21 @@ def max_jumps_to_end(arr):
 
     result = dfs(0)
     return result
+     
 
-
-def min_jump_to_end(nums):
-    n = len(nums)
+def min_jump_to_end(arr):
+    n = len(arr)
     if n == 1:
-        return 0
+        return 0 #f the array has only one element, you're already at the end, so no jumps are needed.
     
-    farthest = 0
-    end = 0
-    jumps = 0
+    farthest = 0  # The farthest index you can reach so far
+    end = 0       # The end of the current jump range
+    jumps = 0     # Number of jumps made
 
     for i in range(n - 1):
-        farthest = max(farthest, i + nums[i])
+        farthest = max(farthest, i + arr[i])
         
-        if i == end:
+        if i == end: #If you've reached the end of your current jump range, it means it's time to increase jumps by 1. And update end to the new boundary farthest
             jumps += 1
             end = farthest
         
