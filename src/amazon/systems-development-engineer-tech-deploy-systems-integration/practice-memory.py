@@ -1,4 +1,53 @@
 
+class ListNode:
+    def __init__ (self, val = 0, next =  None):
+        self.val = val
+        self.next = next
+
+def merge_two_list(list1, list2):
+    dummy = ListNode()
+    current = dummy
+    
+    while list1 and list2:
+        
+        if list1.val < list2.val:
+            current.next = list1
+            list1 = list1.next
+            
+        else:
+            current.next = list2
+            list2 = list2.next
+        current = current.next
+        
+    current.next = list1 if list1 else list2
+    
+    return dummy.next
+
+def build_linked_list(arr):
+    dummy = ListNode()
+    current = dummy
+    
+    for num in arr:
+        current.next = ListNode(num)
+        current  = current.next
+        
+    return dummy.next
+
+def print_linked_list(head):
+    result = []
+    
+    while head:
+        result.append(head.val)
+        head = head.next
+        
+    print(result)
+    
+if __name__ == "__main__":
+    list1 = build_linked_list([1, 2, 4])
+    list2 = build_linked_list([1, 3, 4])
+    
+    merged = merge_two_list (list1, list2)
+    print_linked_list(merged)
 # import heapq
 
 # def k_closest_point(points, k):
@@ -27,25 +76,25 @@
 
 
 
-import re
-import collections
+# import re
+# import collections
 
-def most_common_word(paragraph, banned):
+# def most_common_word(paragraph, banned):
     
-    paragraph = paragraph.lower()
-    words = re.findall(r'\w+', paragraph)
+#     paragraph = paragraph.lower()
+#     words = re.findall(r'\w+', paragraph)
     
     
-    banned_set = set(banned)
+#     banned_set = set(banned)
     
-    word_counts = collections.Counter(word for word in words if word not in banned_set)
+#     word_counts = collections.Counter(word for word in words if word not in banned_set)
     
-    return word_counts.most_common(1)[0][0]
+#     return word_counts.most_common(1)[0][0]
 
 
-paragraph = "Bob hit a ball, the hit BALL flew far after it was hit."
-banned = ["hit"]
-print(most_common_word(paragraph, banned))
+# paragraph = "Bob hit a ball, the hit BALL flew far after it was hit."
+# banned = ["hit"]
+# print(most_common_word(paragraph, banned))
 
 
 

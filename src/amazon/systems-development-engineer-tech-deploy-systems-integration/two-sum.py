@@ -1,4 +1,7 @@
-
+"""
+Given an array of integers nums and an integer target,
+return the indices of the two numbers such that they add up to target.
+"""
 def two_sum_method(arr, target_val):
     arr_length = len(arr)
     
@@ -12,6 +15,6 @@ def two_sum_method(arr, target_val):
 
 if __name__ == "__main__":
     nums = [2, 7, 11, 15]
-    target = 17
+    target = 16
     
     print(two_sum_method(nums, target))
