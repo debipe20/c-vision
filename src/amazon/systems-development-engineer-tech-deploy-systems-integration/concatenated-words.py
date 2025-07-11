@@ -45,4 +45,3 @@ def findAllConcatenatedWordsInADict(words):
 
 words = ["cat","cats","catsdogcats","dog","dogcatsdog","hippopotamuses","rat","ratcatdogcat"]
 print(findAllConcatenatedWordsInADict(words))
-print(find_all_concatenated_words(words))
