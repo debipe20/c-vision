@@ -45,5 +45,5 @@ def orangesRotting(grid):
     return time if fresh_count == 0 else -1
 
 grid = [[2,1,1],[1,1,0],[0,1,1]]
-grid = [[2,1,1],[0,1,1],[1,0,1]]
+# grid = [[2,1,1],[0,1,1],[1,0,1]]
 print(orangesRotting(grid))
