@@ -1,30 +1,67 @@
 """
-valid-parentheses
-Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.
+572. Subtree of Another Tree
+Hint
+Given the roots of two binary trees root and subRoot, return true if there is a subtree of root with the same structure and node values of subRoot and false otherwise.
+A subtree of a binary tree is a tree that consists of a node in tree and all of this node's descendants. The tree could also be considered as a subtree of itself.
 
-An input string is valid if:
-
-Open brackets must be closed by the same type of brackets.
-
-Open brackets must be closed in the correct order.
-
-Every close bracket has a corresponding open bracket of the same type.
+Input: root = [3,4,5,1,2], subRoot = [4,1,2]
+Output: true
 """
-
-
-def is_valid(input_string):
+from collections import deque
+class TreeNode:
+    def __init__(self, val=0, left =None, right = None):
+        self.val = val
+        self.left = left
+        self.right = right
+        
+def build_tree(values):
     
-    stack = []
-    character_map = {'(': ')', '{': '}', '[': ']'}
+    if not values:
+        return None
     
-    for char in input_string:
-        if char in character_map:
-            top = stack.pop() if stack else '#'
+    root = TreeNode(values[0])
+    queue = deque([root])
+    i = 1
+    while queue and i < len(values):
+        node = queue.popleft()
+        if i <len(values) and node.val is not None:
+            node.left = TreeNode(values[i])
+            queue.append(node.left)
             
-            if character_map[char] !=top:
-                return False
-            
-        else:
-            stack.append(char)
-            
-    return not stack
+        i+=1
+        
+        if i < len(values) and values[i] is not None:
+            node.right = TreeNode(values[i])
+            queue.append(node.right)
+        i += 1
+
+    return root
+
+def isSubTree(root, subroot):
+    if not root:
+        return False
+    if isSameTree(root, subroot):
+        return True
+    
+    return isSubTree(root.left, subroot) or isSubTree(root.right, subroot)
+    
+def isSameTree(s,t):
+    if not s and not t:
+        return True
+    
+    if not s or not t:
+        return False
+    
+    if s.val!=t.val:
+        return False
+    
+    return isSameTree(s.left, t.left) or isSameTree(s.right, t.right)
+
+if __name__ == "__main__":
+    root_list = [3, 4, 5, 1, 2]
+    sub_root_list = [4, 1, 2]
+
+    root = build_tree(root_list)
+    sub_root = build_tree(sub_root_list)
+
+    print(isSubTree(root, sub_root))  # Output: True

@@ -44,3 +44,9 @@ def ladderLength(beginWord, endWord, wordList):
 
     # If BFS completes without finding endWord, return 0
     return 0
+
+beginWord = "hit"
+endWord = "cog"
+wordList = ["hot","dot","dog","lot","log","cog"]
+
+print(ladderLength(beginWord, endWord, wordList))  # Output: 5
