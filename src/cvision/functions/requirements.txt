@@ -1,0 +1,4 @@
+firebase-admin
+firebase-functions
+functions-framework
+Flask
