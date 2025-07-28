@@ -13,22 +13,34 @@ admin.initializeApp({
 });
 
 const db = admin.database();
-const ref = db.ref('/latestSensorData');
-
-// Create UDP socket
 const udpClient = dgram.createSocket('udp4');
+
 const UDP_PORT = 5005;
 const UDP_HOST = '127.0.0.1';
 
-ref.on('value', (snapshot) => {
-  const data = snapshot.val();
-  const message = Buffer.from(JSON.stringify(data));
+function forward(path, type) {
+  const ref = db.ref(path);
+  ref.on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
 
-  console.log('📥 Firebase update received:', data);
-  fs.writeFileSync('latest.json', JSON.stringify(data, null, 2));
+    const message = {
+      type: type,
+      timestamp: data.timestamp,
+      payload: data.payload
+    };
 
-  // Send data to Python via UDP
-  udpClient.send(message, 0, message.length, UDP_PORT, UDP_HOST, (err) => {
-    if (err) console.error('❌ UDP send error:', err);
+    console.log(`📥 Firebase update received for ${type}:`, message);
+    fs.writeFileSync(`latest_${type}.json`, JSON.stringify(message, null, 2));
+
+    const udpPayload = Buffer.from(JSON.stringify(message));
+    udpClient.send(udpPayload, 0, udpPayload.length, UDP_PORT, UDP_HOST, (err) => {
+      if (err) console.error(`❌ UDP send error for ${type}:`, err);
+    });
   });
-});
+}
+
+// Set up listeners for each message type
+forward('/SPaTData', 'SPaT');
+forward('/MAPData', 'MAP');
+forward('/BSMData', 'BSM');
