@@ -1,13 +1,31 @@
 import socket
 import json
+import os
+import platform
 
-HOST = '127.0.0.1'
-PORT = 5005
+current_os = platform.system()
+    
+if current_os == "Linux":
+    config_file_path = os.path.join(os.path.expanduser("~"), "Desktop", "debashis-workspace", "config", "anl-master-config.json")
+
+elif current_os == "Windows":
+    config_file_path = os.path.join("C:\\", "Users", "ddas", "debashis-workspace", "config", "anl-master-config.json")
+
+else:
+    raise OSError(f"Unsupported operating system: {current_os}")
+
+config_file = open(config_file_path, "r")
+config = json.load(config_file)
+config_file.close()
+
+
+host_ip = config["IPAddress"]["HostIp"]
+port = config["PortNumber"]["V2XDataReceiver"]
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-sock.bind((HOST, PORT))
+sock.bind((host_ip, port))
 
-print(f"📡 Python UDP server listening on {HOST}:{PORT}...")
+print(f"📡 Python UDP server listening on {host_ip}:{port}...")
 
 while True:
     data, addr = sock.recvfrom(4096)

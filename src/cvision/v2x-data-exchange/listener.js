@@ -2,10 +2,30 @@ const admin = require('firebase-admin');
 const fs = require('fs');
 const dgram = require('dgram');
 
-const path = require('path');
 const os = require('os');
-const sevrice_account_path = path.join(os.homedir(), 'Documents', 'cvision-firebase-key.json');
-const serviceAccount = require(sevrice_account_path);
+const path = require('path');
+
+let configFilePath;
+const currentOS = os.platform();
+
+if (currentOS === 'linux') 
+{
+  configFilePath = path.join(os.homedir(), 'Desktop', 'debashis-workspace', 'config', 'anl-master-config.json');
+  const service_account_path = path.join(os.homedir(), 'Documents', 'cvision-firebase-key.json');
+} 
+
+else if (currentOS === 'win32') 
+{
+  configFilePath = path.join('C:', 'Users', 'Documents', 'debashis-workspace', 'config', 'anl-master-config.json');
+  const service_account_path = path.join('C:', 'Users', 'Documents', 'cvision-firebase-key.json');
+} 
+
+else 
+{
+  throw new Error(`Unsupported operating system: ${currentOS}`);
+}
+
+const serviceAccount = require(service_account_path);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -15,32 +35,35 @@ admin.initializeApp({
 const db = admin.database();
 const udpClient = dgram.createSocket('udp4');
 
-const UDP_PORT = 5005;
-const UDP_HOST = '127.0.0.1';
 
-function forward(path, type) {
-  const ref = db.ref(path);
-  ref.on('value', (snapshot) => {
-    const data = snapshot.val();
-    if (!data) return;
-
-    const message = {
-      type: type,
-      timestamp: data.timestamp,
-      payload: data.payload
-    };
-
-    console.log(`📥 Firebase update received for ${type}:`, message);
-    fs.writeFileSync(`latest_${type}.json`, JSON.stringify(message, null, 2));
-
-    const udpPayload = Buffer.from(JSON.stringify(message));
-    udpClient.send(udpPayload, 0, udpPayload.length, UDP_PORT, UDP_HOST, (err) => {
-      if (err) console.error(`❌ UDP send error for ${type}:`, err);
-    });
-  });
+// Read and parse the config file
+let config;
+try {
+  const configRaw = fs.readFileSync(configFilePath, 'utf-8');
+  config = JSON.parse(configRaw);
+} catch (err) {
+  console.error('❌ Failed to load config file:', err);
+  process.exit(1);
 }
 
-// Set up listeners for each message type
-forward('/SPaTData', 'SPaT');
-forward('/MAPData', 'MAP');
-forward('/BSMData', 'BSM');
+const host_ip = config?.IPAddress?.HostIp;
+const receiver_port = config?.PortNumber?.V2XDataReceiver;
+
+// 🔁 Listen to only the unified latest message path
+const ref = db.ref('/LatestV2XMessage');
+
+ref.on('value', (snapshot) => {
+  const data = snapshot.val();
+  if (!data) return;
+
+  console.log('📥 Latest V2X message received:', data);
+
+  // Save to file
+  fs.writeFileSync('latest.json', JSON.stringify(data, null, 2));
+
+  // Send via UDP
+  const udpPayload = Buffer.from(JSON.stringify(data));
+  udpClient.send(udpPayload, 0, udpPayload.length, receiver_port, host_ip, (err) => {
+    if (err) console.error('❌ UDP send error:', err);
+  });
+});
