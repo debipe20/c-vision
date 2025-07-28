@@ -25,12 +25,13 @@ port = config["PortNumber"]["V2XDataReceiver"]
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind((host_ip, port))
 
-print(f"📡 Python UDP server listening on {host_ip}:{port}...")
+print(f"Python UDP server listening on {host_ip}:{port}...")
 
 while True:
     data, addr = sock.recvfrom(4096)
     try:
         message = json.loads(data.decode())
-        print("📥 Received from Node.js:", message)
+        print("Received from Node.js:", message)
+        
     except Exception as e:
-        print("❌ Error decoding message:", e)
+        print("Error decoding message:", e)
