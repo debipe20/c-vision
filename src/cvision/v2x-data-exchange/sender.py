@@ -54,7 +54,7 @@ def main():
 
             payload = decoded_data[prefix_index + len(payload_prefix):].strip()
 
-            print(f"📥 Received payload: {payload}")
+            print(f"Received payload: {payload}")
 
             # Detect payload type
             if payload.startswith(map_identifier):
@@ -70,7 +70,7 @@ def main():
                 msg_type = "BSM"
             
             else:
-                print("⚠️ Unknown payload type, skipping...")
+                print("Unknown payload type, skipping...")
                 continue
 
             # Send to Firebase
@@ -87,12 +87,12 @@ def main():
                 "payload": payload
             })
 
-            print(f"✅ {msg_type} message uploaded to Firebase")
+            print(f"{msg_type} message uploaded to Firebase")
 
         except KeyboardInterrupt:
             break
         except Exception as e:
-            print("❌ Error:", e)
+            print("Error:", e)
 
     msgReceiverSocket.close()
 
