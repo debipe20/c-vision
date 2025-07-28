@@ -2,7 +2,10 @@ const admin = require('firebase-admin');
 const fs = require('fs');
 const dgram = require('dgram');
 
-const serviceAccount = require('./cvision-firebase-key.json');
+const path = require('path');
+const os = require('os');
+const sevrice_account_path = path.join(os.homedir(), 'Documents', 'cvision-firebase-key.json');
+const serviceAccount = require(sevrice_account_path);
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
