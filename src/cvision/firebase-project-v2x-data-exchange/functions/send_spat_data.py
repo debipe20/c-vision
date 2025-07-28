@@ -6,7 +6,10 @@ import uuid # Added if you want to generate unique IDs for local tracking in the
 
 # --- Configuration ---
 # Your deployed Cloud Function URL remains the same
-CLOUD_FUNCTION_URL = "https://ingest-spat-data-hww35uderq-uc.a.run.app"
+# IMPORTANT: Use the actual URL for your deployed ingest_spat_data function from Firebase Console.
+# Example: "https://ingest-spat-data-hww35uderq-uc.a.run.app"
+# CLOUD_FUNCTION_URL = "https://ingest-spat-data-hww35uderq-uc.a.run.app" # Using the URL from your screenshot
+CLOUD_FUNCTION_URL = "http://localhost:5001/v2x-data-exchange/us-central1/ingest_spat_data" # To use firebase Emulator for local use
 
 # --- Sample Encoded J2735 SPaT Data (as Hex String) ---
 ENCODED_SPAT_HEX_PAYLOAD = "001380820018800001F58300001D4C1C3510B001043C00190032004B001023600258032003E800C10F001F4025802BC0080878015E019001C2005043C00E100FA011300302360089809600A2801C10F00514057805DC010087802EE0320035200A048C01A901C201DB006021E00ED80FA0106803812300834089808FC0200878047E04B004E2"
@@ -22,7 +25,7 @@ def send_encoded_spat_data(encoded_hex_data: str):
     headers = {
         'Content-Type': 'application/octet-stream' # Generic binary content type
     }
-    # Removed: 'params' dictionary for intersectionId as it's no longer a query param
+    # The 'intersectionId' query parameter is no longer needed/used by the ingest function.
 
     try:
         # Send POST request without query parameters
@@ -42,10 +45,10 @@ def send_encoded_spat_data(encoded_hex_data: str):
     return False
 
 if __name__ == "__main__":
-    print("Starting ENCODED SPaT data sender (without intersection ID query param)...")
+    print("Starting ENCODED SPaT data sender (without intersection ID query param)...\n")
 
     for i in range(3): # Send 3 updates of the same encoded payload
-        print(f"\n--- Sending Round {i+1} ---")
+        print(f"--- Sending Round {i+1} ---")
         send_encoded_spat_data(ENCODED_SPAT_HEX_PAYLOAD)
         time.sleep(2) # Wait for 2 seconds before sending the next update
 
