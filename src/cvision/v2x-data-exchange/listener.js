@@ -1,3 +1,14 @@
+/**
+ * listener.js
+ * 
+ * This Node.js script connects to Firebase Realtime Database and listens for updates to
+ * the `/LatestV2XMessage` node. When a new message is received, it forwards it via UDP
+ * to the configured receiver endpoint.
+ * 
+ * Usage:
+ *     node listener.js
+ */
+
 const admin = require('firebase-admin');
 const fs = require('fs');
 const dgram = require('dgram');

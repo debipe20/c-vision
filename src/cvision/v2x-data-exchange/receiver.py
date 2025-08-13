@@ -1,3 +1,13 @@
+"""
+receiver.py
+
+Listens for V2X messages forwarded from Firebase by listener.js over UDP.
+Prints/logs received messages. Can be extended to validate and acknowledge BSM messages.
+
+Usage:
+    python3 receiver.py
+"""
+
 import socket
 import json
 import os
