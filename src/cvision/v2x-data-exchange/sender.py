@@ -1,3 +1,14 @@
+"""
+sender.py
+
+Receives V2X messages (SPaT, MAP, BSM) over UDP, identifies message type based on payload prefix,
+and uploads structured data to Firebase Realtime Database. It also updates a unified
+`/LatestV2XMessage` node with the latest message for real-time forwarding.
+
+Usage:
+    python3 sender.py
+"""
+
 import os
 import platform
 import socket
