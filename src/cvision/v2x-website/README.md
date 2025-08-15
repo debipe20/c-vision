@@ -33,7 +33,7 @@ npm install
 3.  **Create `.env.local`**:
     Create a file named `.env.local` in the project's root directory. Copy the sample variables below and populate them with your own **Mapbox token** and **Firebase configuration**.
 
-    ```bash
+    ```env
     NEXT_PUBLIC_MAPBOX_TOKEN=pk.xxxxxx
     NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
     NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
@@ -209,7 +209,7 @@ firebase.database()
 ## 🚀 Deployment to Firebase Hosting
 **1. Install Firebase CLI**
 ```bash
-npm run dev
+npm install -g firebase-tools
 ```
 
 **2. Initialize Hosting**
