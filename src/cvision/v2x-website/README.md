@@ -213,7 +213,9 @@ npm run dev
 ```
 
 **2. Initialize Hosting**
+```bash
 firebase init hosting
+```
 
 **3. Update next.config.ts**
 ```
@@ -222,7 +224,7 @@ const nextConfig = {
 };
 export default nextConfig;
 ```
-**3. Build and Deploy**
+**4. Build and Deploy**
 ```bash
 npm run build
 firebase deploy --only hosting
