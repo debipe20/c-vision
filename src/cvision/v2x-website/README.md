@@ -13,22 +13,22 @@ These instructions will help you set up the project locally for development and 
 
 - **Node.js**: Version **18 or newer**.  
   Check your version:
-  ```bash
-  node -v
-  ```
+```bash
+node -v
+```
 
 ### Installation
 
 1.  **Clone the repository**:
-    ```bash
-    git clone https://github.com/debipe20/debashis-workspace
-    cd debashis-workspace
-    ```
+```bash
+git clone https://github.com/debipe20/debashis-workspace
+cd debashis-workspace
+```
 
 2.  **Install dependencies**:
-    ```bash
-    npm install
-    ```
+```bash
+npm install
+```
 
 3.  **Create `.env.local`**:
     Create a file named `.env.local` in the project's root directory. Copy the sample variables below and populate them with your own **Mapbox token** and **Firebase configuration**.
@@ -65,7 +65,8 @@ Go to Firebase Console → Realtime Database → Create Database.
 
 Select your region and start in Locked Mode.
 
-3. **Add Security Rules**
+
+## 🔐 Security Rules
 
 Paste the following rules in **Firebase Console → Realtime Database → Rules**:
 
@@ -107,10 +108,9 @@ Paste the following rules in **Firebase Console → Realtime Database → Rules*
 }
 ```
 
-
 ## 📂 Database Structure
 
-Our Realtime Database contains the following top-level nodes:
+Realtime Database contains the following top-level nodes:
 
 ```
 /
@@ -208,9 +208,9 @@ firebase.database()
 ---
 ## 🚀 Deployment to Firebase Hosting
 **Install Firebase CLI**
-  ```bash
-    npm run dev
-  ```
+```bash
+npm run dev
+```
 
 **Initialize Hosting**
 firebase init hosting
