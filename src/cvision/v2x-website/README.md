@@ -22,7 +22,7 @@ These instructions will help you set up the project locally for development and 
 1.  **Clone the repository**:
     ```bash
     git clone https://github.com/debipe20/debashis-workspace
-    cd debashis-workspace>
+    cd debashis-workspace
     ```
 
 2.  **Install dependencies**:
@@ -48,27 +48,24 @@ These instructions will help you set up the project locally for development and 
     ```bash
     npm run dev
     ```
-## ** 🔧 Firebase Setup **
 
-5. **Enable Authentication**
+---
+
+## 🔧 Firebase Setup 
+
+1. **Enable Authentication**
 
 In Firebase Console, go to Authentication → Sign-in method.
 
 Enable Email/Password.
 
-6. **Create a Realtime Database**
+2. **Create a Realtime Database**
 
 Go to Firebase Console → Realtime Database → Create Database.
 
 Select your region and start in Locked Mode.
 
-7. **Add Security Rules**
-
-Paste these rules into Firebase Console → Realtime Database → Rules
-
----
-
-## 🔐 Security Rules
+3. **Add Security Rules**
 
 Paste the following rules in **Firebase Console → Realtime Database → Rules**:
 
