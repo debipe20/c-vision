@@ -1,6 +1,6 @@
 # 🚗 C-VISION V2X Website – Firebase Realtime Database Setup
 
-This project is a **Next.js** application that visualizes V2X (Vehicle-to-Everything) data using a **Firebase Realtime Database**.  
+This project is a **Next.js** application that visualizes Vehicle-to-Everything (V2X) data using a **Firebase Realtime Database**.  
 It includes a **user-approval system** managed by administrators.
 
 ---
@@ -15,7 +15,7 @@ These instructions will help you set up the project locally for development and 
   Check your version:
   ```bash
   node -v
-
+  ```
 
 ### Installation
 
@@ -230,7 +230,7 @@ export default nextConfig;
   npm run build
   firebase deploy --only hosting
   ```
-  
+
 ## 🛡 Notes
 - Only admins can **approve users** or view the list of approved users.
 - Regular users can **only see their own approval status**.
