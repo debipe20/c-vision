@@ -1,78 +1,70 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-<!-- Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
- -->
-
 # 🚗 C-VISION V2X Website – Firebase Realtime Database Setup
 
-This document explains the **Firebase Realtime Database structure**, **security rules**, and **approval workflow** for the V2X visualization website.
+This project is a **Next.js** application that visualizes V2X (Vehicle-to-Everything) data using a **Firebase Realtime Database**.  
+It includes a **user-approval system** managed by administrators.
 
 ---
 
-## 📂 Database Structure
+## 🧰 Getting Started
 
-Our Realtime Database contains the following top-level nodes:
+These instructions will help you set up the project locally for development and testing.
 
-```
-/
-├── admins
-│   └── <admin_uid>: true
-│
-├── allowed_users
-│   └── <approved_user_uid>: true
-│
-├── pending_users
-│   └── <user_uid>: <optional_info>
-│
-├── bsm
-├── spat
-├── BSMData
-├── SPaTData
-├── MAPData
-└── LatestV2XMessage
-```
+### Prerequisites
 
-### Node Purpose
-| Node | Description |
-|------|-------------|
-| `/admins` | List of admin UIDs who can approve new users and manage permissions. |
-| `/allowed_users` | List of approved user UIDs who can access live V2X data. |
-| `/pending_users` | Users awaiting admin approval. |
-| `/bsm`, `/spat` | Core V2X message feeds (read-only for approved users). |
-| `/BSMData`, `/SPaTData`, `/MAPData`, `/LatestV2XMessage` | Additional V2X message storage for visualization. |
+- **Node.js**: Version **18 or newer**.  
+  Check your version:
+  ```bash
+  node -v
+
+
+### Installation
+
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/debipe20/debashis-workspace
+    cd debashis-workspace>
+    ```
+
+2.  **Install dependencies**:
+    ```bash
+    npm install
+    ```
+
+3.  **Create `.env.local`**:
+    Create a file named `.env.local` in the project's root directory. Copy the sample variables below and populate them with your own **Mapbox token** and **Firebase configuration**.
+
+    ```bash
+    NEXT_PUBLIC_MAPBOX_TOKEN=pk.xxxxxx
+    NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
+    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+    NEXT_PUBLIC_FIREBASE_DATABASE_URL=https://your-project-id-default-rtdb.firebaseio.com
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
+    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=1234567890
+    NEXT_PUBLIC_FIREBASE_APP_ID=1:1234567890:web:abcdef123456
+    ```
+
+4.  **Run the development server**:
+    ```bash
+    npm run dev
+    ```
+## ** 🔧 Firebase Setup **
+
+5. **Enable Authentication**
+
+In Firebase Console, go to Authentication → Sign-in method.
+
+Enable Email/Password.
+
+6. **Create a Realtime Database**
+
+Go to Firebase Console → Realtime Database → Create Database.
+
+Select your region and start in Locked Mode.
+
+7. **Add Security Rules**
+
+Paste these rules into Firebase Console → Realtime Database → Rules
 
 ---
 
@@ -118,7 +110,39 @@ Paste the following rules in **Firebase Console → Realtime Database → Rules*
 }
 ```
 
----
+
+## 📂 Database Structure
+
+Our Realtime Database contains the following top-level nodes:
+
+```
+/
+├── admins
+│   └── <admin_uid>: true
+│
+├── allowed_users
+│   └── <approved_user_uid>: true
+│
+├── pending_users
+│   └── <user_uid>: <optional_info>
+│
+├── bsm
+├── spat
+├── BSMData
+├── SPaTData
+├── MAPData
+└── LatestV2XMessage
+```
+
+### Node Purpose
+| Node | Description |
+|------|-------------|
+| `/admins` | List of admin UIDs who can approve new users and manage permissions. |
+| `/allowed_users` | List of approved user UIDs who can access live V2X data. |
+| `/pending_users` | Users awaiting admin approval. |
+| `/bsm`, `/spat` | Core V2X message feeds (read-only for approved users). |
+| `/BSMData`, `/SPaTData`, `/MAPData`, `/LatestV2XMessage` | Additional V2X message storage for visualization. |
+
 
 ## 👤 Adding an Admin
 
@@ -133,7 +157,7 @@ Paste the following rules in **Firebase Console → Realtime Database → Rules*
 Example:
 ```json
 "admins": {
-  "6uD5hKWrZ5bcYxWMJInYFROFR932": true
+  "6uD5hHPrZ5dvYxWDEBnYFROFR435": true
 }
 ```
 
@@ -185,7 +209,28 @@ firebase.database()
 ```
 
 ---
+## 🚀 Deployment to Firebase Hosting
+**Install Firebase CLI**
+  ```bash
+    npm run dev
+  ```
 
+**Initialize Hosting**
+firebase init hosting
+
+**Update next.config.ts**
+```
+const nextConfig = {
+  output: 'export'
+};
+export default nextConfig;
+```
+**Build and Deploy**
+  ```bash
+  npm run build
+  firebase deploy --only hosting
+  ```
+  
 ## 🛡 Notes
 - Only admins can **approve users** or view the list of approved users.
 - Regular users can **only see their own approval status**.
