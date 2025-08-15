@@ -207,26 +207,26 @@ firebase.database()
 
 ---
 ## 🚀 Deployment to Firebase Hosting
-**Install Firebase CLI**
+**1. Install Firebase CLI**
 ```bash
 npm run dev
 ```
 
-**Initialize Hosting**
+**2. Initialize Hosting**
 firebase init hosting
 
-**Update next.config.ts**
+**3. Update next.config.ts**
 ```
 const nextConfig = {
   output: 'export'
 };
 export default nextConfig;
 ```
-**Build and Deploy**
-  ```bash
-  npm run build
-  firebase deploy --only hosting
-  ```
+**3. Build and Deploy**
+```bash
+npm run build
+firebase deploy --only hosting
+```
 
 ## 🛡 Notes
 - Only admins can **approve users** or view the list of approved users.
