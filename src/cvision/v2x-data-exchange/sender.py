@@ -1,12 +1,26 @@
 """
+**********************************************************************************
 sender.py
+Created by: Debashis Das
+Argonne National Laboratory
+Transportation and Power Systems Division
 
+**********************************************************************************
+
+Description:
+------------
 Receives V2X messages (SPaT, MAP, BSM) over UDP, identifies message type based on payload prefix,
 and uploads structured data to Firebase Realtime Database. It also updates a unified
 `/LatestV2XMessage` node with the latest message for real-time forwarding.
 
-Usage:
+Bonus:
+------
+Run with `--seed` to write one demo BSM and SPaT to Firebase for testing the web UI:
+    python3 sender.py --seed
+
+Usage (normal mode):
     python3 sender.py
+**********************************************************************************
 """
 
 import os
@@ -107,5 +121,56 @@ def main():
 
     msgReceiverSocket.close()
 
-if __name__ == '__main__':
-    main()
+# ------------------------------------------------------------------------------
+# Seed demo BSM/SPaT for the web UI (/bsm, /spat)
+# ------------------------------------------------------------------------------
+# -----------------------------
+# Test seed (writes to /bsm and /spat for the web UI)
+# Usage: python3 sender.py --seed
+# -----------------------------
+import argparse
+from datetime import datetime
+
+def seed_test_records():
+    # Vehicle near downtown Austin
+    db.reference("bsm/test-veh-1").set({
+        "lat": 41.710676,
+        "lon": -87.992046,
+        "speed_mps": 11.5,
+        "heading_deg": 360,
+        "ts": int(time.time() * 1000)
+    })
+
+    # One SPaT point nearby (simple 'green' state)
+    db.reference("spat/int-1").set({
+        "phaseStates": [
+            {"phase": 2, "state": "protectedMovementAllowed"}
+        ],
+        "lat": 41.711326,
+        "lon": -87.992046,
+        "timestamp": int(time.time())
+    })
+
+    # (Optional) keep your unified latest node in sync for debugging
+    db.reference("LatestV2XMessage").set({
+        "type": "SEED",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "payload": "Seeded BSM and SPaT demo data."
+    })
+
+    print("✅ Seeded demo BSM (/bsm/test-veh-1) and SPaT (/spat/int-1) records.")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="V2X sender")
+    parser.add_argument("--seed", action="store_true",
+                        help="Write one demo BSM and SPaT to Firebase and exit.")
+    args, _ = parser.parse_known_args()
+
+    if args.seed:
+        seed_test_records()
+    else:
+        main()
+
+
+# if __name__ == '__main__':
+#     main()

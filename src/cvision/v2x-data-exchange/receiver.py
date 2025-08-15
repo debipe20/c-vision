@@ -1,11 +1,19 @@
 """
+**********************************************************************************
 receiver.py
+Created by: Debashis Das
+Argonne National Laboratory
+Transportation and Power Systems Division
 
+**********************************************************************************
+Description:
+------------
 Listens for V2X messages forwarded from Firebase by listener.js over UDP.
 Prints/logs received messages. Can be extended to validate and acknowledge BSM messages.
 
 Usage:
     python3 receiver.py
+**********************************************************************************
 """
 
 import socket
