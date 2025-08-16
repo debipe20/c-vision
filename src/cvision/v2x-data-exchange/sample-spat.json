@@ -1,0 +1,63 @@
+{
+    "admins": {
+        "6uD5hKWrZ5bcYxWMJInYFROFR932": true
+    },
+    "allowed_users": {
+        "6uD5hKWrZ5bcYxWMJInYFROFR932": true
+    },
+    "SPaTInfo": [
+        {
+            "IntersectionName": "KearneyRd & WaterTower",
+            "IntersectionID": 2351,
+            "phaseStates": [
+                {
+                    "phase": 2,
+                    "state": "permissiveMovementAllowed",
+                    "direction": "NorthBound"
+                },
+                {
+                    "phase": 4,
+                    "state": "stopAndRemain",
+                    "direction": "WestBound"
+                },
+                {
+                    "phase": 6,
+                    "state": "protectedMovementAllowed",
+                    "direction": "SouthBound"
+                }
+            ],
+            "lat": 41.711326,
+            "lon": -87.992046,
+            "timestamp": 2345478.1
+        },
+        {
+            "IntersectionName": "KearneyRd & WestgateRd",
+            "IntersectionID": 2350,
+            "phaseStates": [
+                {
+                    "phase": 2,
+                    "state": "stopAndRemain",
+                    "direction": "NorthBound"
+                },
+                {
+                    "phase": 4,
+                    "state": "permissiveMovementAllowed",
+                    "direction": "SouthBound"
+                },
+                {
+                    "phase": 6,
+                    "state": "stopAndRemain",
+                    "direction": "WestBound"
+                },
+                {
+                    "phase": 8,
+                    "state": "permissiveMovementAllowed",
+                    "direction": "SouthBound"
+                }
+            ],
+            "lat": 41.715502,
+            "lon": 41.715502,
+            "timestamp": 2345478.1
+        }
+    ]
+}
