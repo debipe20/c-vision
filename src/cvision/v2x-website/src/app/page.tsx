@@ -13,10 +13,10 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 
-/* ==================== MAPBOX ==================== */
+// ===== Mapbox token (from .env.local) =====
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
 
-/* ==================== FIREBASE ==================== */
+// ===== Firebase config (from .env.local) =====
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN!,
@@ -27,6 +27,7 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
 };
 
+// Lazy-init Firebase services
 function useFirebaseDB() {
   return useMemo(() => {
     if (!getApps().length) initializeApp(firebaseConfig);
@@ -40,7 +41,7 @@ function useFirebaseAuth() {
   }, []);
 }
 
-/* ==================== TYPES ==================== */
+// ===== Types =====
 type Vehicle = {
   id: string;
   lat: number;
@@ -50,11 +51,12 @@ type Vehicle = {
   ts?: number;
 };
 
+// Your SPaT seed format -> /spat/SPaTInfo = Array<SpatItemRaw>
 type PhaseStateRaw = {
   phase: number;
-  state: string;
-  direction?: string;
-  maneuver?: string; // "left-through", "left-right", "through-right", "left-through-right", ...
+  state: string; // e.g., stopAndRemain | permissiveMovementAllowed | protectedMovementAllowed
+  maneuver?: string; // e.g., left-through, through-right, etc. (not used for markers now)
+  direction?: string; // e.g., NorthBound, SouthBound...
 };
 type SpatItemRaw = {
   IntersectionName?: string;
@@ -65,12 +67,8 @@ type SpatItemRaw = {
   timestamp?: number;
 };
 
-type PhaseState = {
-  phase: number;
-  state: string;
-  direction?: string;
-  maneuver?: string;
-};
+// Normalized for UI
+type PhaseState = { phase: number; state: string; maneuver?: string; direction?: string };
 type Spat = {
   intersection_id: string;
   intersection_name?: string;
@@ -80,83 +78,49 @@ type Spat = {
   lon?: number;
 };
 
-type Approach = "N" | "E" | "S" | "W";
-
-/* ==================== HELPERS ==================== */
-function directionToApproach(d?: string): Approach {
-  const s = (d || "").toLowerCase();
-  if (s.startsWith("n")) return "N";
-  if (s.startsWith("e")) return "E";
-  if (s.startsWith("s")) return "S";
-  return "W";
-}
-
-function lampHex(state: string): string {
-  const s = state.toLowerCase();
-  if (s.includes("stop")) return "#e11d48"; // red
-  if (s.includes("perm") || s.includes("protect")) return "#16a34a"; // green
-  if (s.includes("caution") || s.includes("pre") || s.includes("yellow"))
-    return "#f59e0b"; // yellow
-  return "#6b7280"; // gray
-}
-
-/** Render arrows (UTF glyphs) based on a maneuver string. */
-function arrowsForManeuver(m?: string): string {
-  const mvr = (m || "").toLowerCase();
-  const left = "↰";
-  const thru = "↑";
-  const right = "↱";
-
-  const parts: string[] = [];
-  if (mvr.includes("left")) parts.push(left);
-  if (mvr.includes("through")) parts.push(thru);
-  if (mvr.includes("right")) parts.push(right);
-
-  // fallback if unknown
-  if (!parts.length) return "↑";
-  return parts.join(" ");
-}
-
-/* ==================== PAGE ==================== */
 export default function Page() {
   const db = useFirebaseDB();
   const auth = useFirebaseAuth();
 
-  // Auth
+  // ---------- Auth state ----------
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [authErr, setAuthErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // Optional approval gate
+  // Optional approval gate (set to true if you aren’t enforcing /allowed_users)
   const [approved, setApproved] = useState<boolean | null>(true);
 
-  // Map
+  // ---------- Map/markers state ----------
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  const [mapStyle, setMapStyle] = useState<"streets" | "satellite">("streets");
-  const defaultCenter: [number, number] = [-87.992046, 41.711326]; // Kearney & Watertower
+  const [center] = useState<[number, number]>([-87.992046, 41.711326]); // default center (ANL site)
+  const [mapStyle, setMapStyle] = useState<"streets" | "sat">("streets");
+
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [spats, setSpats] = useState<Spat[]>([]);
-  const vehicleMarkersRef = useRef<Record<string, mapboxgl.Marker>>({});
-  const spatMarkersRef = useRef<Record<string, mapboxgl.Marker>>({}); // kept for cleanup only
 
+  // Markers
+  const vehicleMarkersRef = useRef<Record<string, mapboxgl.Marker>>({});
+  const spatCenterMarkersRef = useRef<Record<string, mapboxgl.Marker>>({});
+
+  // Selection
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  /* ==== Auth watcher ==== */
+  // ---------- Auth watcher ----------
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setAuthed(!!u);
       if (u) {
-        // Approval check (optional)
-        const r = dbRef(db, `allowed_users/${u.uid}`);
-        const off = onValue(
-          r,
-          (snap) => setApproved(snap.exists() ? Boolean(snap.val()) : false),
-          () => setApproved(false)
-        );
-        return () => off();
+        // If you enforce approval, uncomment the lines below
+        // const r = dbRef(db, `allowed_users/${u.uid}`);
+        // const off = onValue(
+        //   r,
+        //   (snap) => setApproved(snap.exists() ? Boolean(snap.val()) : false),
+        //   () => setApproved(false)
+        // );
+        // return () => off();
       } else {
         setApproved(null);
       }
@@ -164,36 +128,29 @@ export default function Page() {
     return () => unsub();
   }, [auth, db]);
 
-  /* ==== Map init (recreates when style changes) ==== */
+  // ---------- Map init / style toggle ----------
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current || authed !== true) return;
+    if (!mapContainerRef.current) return;
 
-    mapRef.current = new mapboxgl.Map({
+    const map = new mapboxgl.Map({
       container: mapContainerRef.current,
       style:
-        mapStyle === "satellite"
-          ? "mapbox://styles/mapbox/satellite-streets-v12"
-          : "mapbox://styles/mapbox/streets-v12",
-      center: defaultCenter,
-      zoom: 14,
+        mapStyle === "streets"
+          ? "mapbox://styles/mapbox/streets-v12"
+          : "mapbox://styles/mapbox/satellite-streets-v12",
+      center,
+      zoom: 15,
     });
+    map.addControl(new mapboxgl.NavigationControl(), "top-right");
 
-    mapRef.current.addControl(new mapboxgl.NavigationControl(), "top-right");
-
-    // Basic error logging (no eslint disable, no EventData typing)
-    mapRef.current.on("error", (e: unknown) => {
-      if (typeof console !== "undefined") {
-        console.error("Mapbox error:", e);
-      }
-    });
-
+    mapRef.current = map;
     return () => {
-      mapRef.current?.remove();
+      map.remove();
       mapRef.current = null;
     };
-  }, [authed, mapStyle]);
+  }, [center, mapStyle]); // recreate map when style toggles
 
-  /* ==== Vehicles (/bsm) ==== */
+  // ---------- BSM subscription ----------
   useEffect(() => {
     if (authed !== true || approved === false) return;
     const ref = dbRef(db, "bsm");
@@ -202,25 +159,26 @@ export default function Page() {
       const list: Vehicle[] = Object.keys(val).map((id) => ({ id, ...val[id] }));
       setVehicles(list);
 
-      // Optional: initial focus to first car
-      const map = mapRef.current;
-      if (list.length && map) {
+      // Auto-center once if not selected and we have a vehicle
+      if (list.length && mapRef.current) {
         const v = list[0];
-        if (typeof v.lon === "number" && typeof v.lat === "number") {
-          if (map.getZoom() < 13) map.flyTo({ center: [v.lon, v.lat], zoom: 14 });
+        if (typeof v.lon === "number" && typeof v.lat === "number" && mapRef.current.getZoom() < 13) {
+          mapRef.current.flyTo({ center: [v.lon, v.lat], zoom: 14 });
         }
       }
     });
     return () => unsub();
   }, [db, authed, approved]);
 
-  /* ==== SPaT (/spat/SPaTInfo) ==== */
+  // ---------- SPaT subscription ----------
   useEffect(() => {
     if (authed !== true || approved === false) return;
     const ref = dbRef(db, "spat");
     const unsub = onValue(ref, (snap) => {
       const root = snap.val() || {};
-      const arr: SpatItemRaw[] = Array.isArray(root?.SPaTInfo) ? (root.SPaTInfo as SpatItemRaw[]) : [];
+      const arr: SpatItemRaw[] = Array.isArray(root?.SPaTInfo)
+        ? (root.SPaTInfo as SpatItemRaw[])
+        : [];
 
       const list: Spat[] = arr.map((r, idx) => ({
         intersection_id:
@@ -229,31 +187,32 @@ export default function Page() {
         phaseStates: (r.phaseStates || []).map((p) => ({
           phase: Number(p.phase),
           state: String(p.state),
-          direction: p.direction,
           maneuver: p.maneuver,
+          direction: p.direction,
         })),
-        lat: typeof r.lat === "number" ? r.lat : undefined,
-        lon: typeof r.lon === "number" ? r.lon : undefined,
+        lat: r.lat,
+        lon: r.lon,
         timestamp: r.timestamp,
       }));
 
       setSpats(list);
 
-      // Pick default selection and fly
-      if (!selectedId && list.length) setSelectedId(list[0].intersection_id);
-      const active =
+      // Default selection + flyTo
+      if (!selectedId && list.length) {
+        setSelectedId(list[0].intersection_id);
+      }
+      const sel =
         list.find((s) => s.intersection_id === (selectedId ?? list[0]?.intersection_id)) ||
         list[0];
 
-      const map = mapRef.current;
-      if (active && map && typeof active.lon === "number" && typeof active.lat === "number") {
-        map.flyTo({ center: [active.lon, active.lat], zoom: 17 });
+      if (sel && mapRef.current && typeof sel.lon === "number" && typeof sel.lat === "number") {
+        mapRef.current.flyTo({ center: [sel.lon, sel.lat], zoom: 17 });
       }
     });
     return () => unsub();
   }, [db, authed, approved, selectedId]);
 
-  /* ==== Vehicle markers (car icons) ==== */
+  // ---------- Vehicle markers (car icons) ----------
   useEffect(() => {
     const map = mapRef.current;
     if (!map || authed !== true || approved === false) return;
@@ -263,23 +222,29 @@ export default function Page() {
     vehicles.forEach((v) => {
       if (typeof v.lon !== "number" || typeof v.lat !== "number") return;
 
-      const el = document.createElement("div");
-      el.className = "vehicle-marker";
-      el.style.width = "28px";
-      el.style.height = "28px";
-      el.style.backgroundImage = "url('/car-icon.webp')";
-      el.style.backgroundSize = "contain";
-      el.style.backgroundRepeat = "no-repeat";
-      el.style.backgroundPosition = "center";
-      el.style.transform = "translate(-50%, -50%)";
-      if (typeof v.heading_deg === "number") el.style.transform += ` rotate(${v.heading_deg}deg)`;
+      let marker = cache[v.id];
+      if (!marker) {
+        const el = document.createElement("div");
+        el.style.width = "32px";
+        el.style.height = "32px";
+        el.style.backgroundImage = "url('/car-icon.webp')";
+        el.style.backgroundSize = "contain";
+        el.style.backgroundRepeat = "no-repeat";
+        el.style.backgroundPosition = "center";
+        el.style.transform = "translate(-50%, -50%)";
+        marker = new mapboxgl.Marker({ element: el, anchor: "center" }).addTo(map);
+        cache[v.id] = marker;
+      }
+      marker.setLngLat([v.lon, v.lat]);
 
-      const marker = cache[v.id] || new mapboxgl.Marker({ element: el, anchor: "center" });
-      marker.setLngLat([v.lon, v.lat]).addTo(map);
-      cache[v.id] = marker;
+      // rotate if heading available
+      const el = marker.getElement();
+      el.style.transform =
+        "translate(-50%, -50%)" +
+        (typeof v.heading_deg === "number" ? ` rotate(${v.heading_deg}deg)` : "");
     });
 
-    // prune
+    // Remove stale car markers
     Object.keys(cache).forEach((id) => {
       if (!vehicles.find((v) => v.id === id)) {
         cache[id].remove();
@@ -288,13 +253,44 @@ export default function Page() {
     });
   }, [vehicles, authed, approved]);
 
-  /* ==== Ensure no SPaT badges are rendered on the map ==== */
+  // ---------- Intersection center markers (one traffic-light icon per intersection) ----------
   useEffect(() => {
-    Object.values(spatMarkersRef.current).forEach((m) => m.remove());
-    spatMarkersRef.current = {};
-  }, [spats, selectedId]);
+    const map = mapRef.current;
+    if (!map || authed !== true || approved === false) return;
 
-  /* ==================== AUTH UI ==================== */
+    const cache = spatCenterMarkersRef.current;
+
+    spats.forEach((s) => {
+      if (typeof s.lon !== "number" || typeof s.lat !== "number") return;
+
+      let marker = cache[s.intersection_id];
+      if (!marker) {
+        const el = document.createElement("div");
+        el.style.width = "28px";
+        el.style.height = "28px";
+        el.style.backgroundImage = "url('/traffic-light.png')";
+        el.style.backgroundSize = "contain";
+        el.style.backgroundRepeat = "no-repeat";
+        el.style.backgroundPosition = "center";
+        el.style.transform = "translate(-50%, -50%)";
+        el.title = s.intersection_name || s.intersection_id;
+
+        marker = new mapboxgl.Marker({ element: el, anchor: "center" }).addTo(map);
+        cache[s.intersection_id] = marker;
+      }
+      marker.setLngLat([s.lon!, s.lat!]);
+    });
+
+    // Remove stale intersection markers
+    Object.keys(cache).forEach((id) => {
+      if (!spats.find((s) => s.intersection_id === id)) {
+        cache[id].remove();
+        delete cache[id];
+      }
+    });
+  }, [spats, authed, approved]);
+
+  // ----- LOGIN UI -----
   if (authed === false) {
     const onLogin = async () => {
       try {
@@ -319,7 +315,7 @@ export default function Page() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          <input
+        <input
             className="border rounded p-2 w-full"
             type="password"
             placeholder="Password"
@@ -339,16 +335,23 @@ export default function Page() {
     );
   }
 
+  // While checking auth, render blank page (prevents flash)
   if (authed === null) return <div className="min-h-screen w-full bg-white" />;
 
+  // Optional approval gate
   if (approved === false) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="rounded-2xl shadow p-6 w-[28rem] bg-white">
           <h2 className="text-lg font-bold mb-2">Access pending</h2>
-          <p className="text-sm text-gray-700">Your account is not approved yet. Please contact an administrator.</p>
+          <p className="text-sm text-gray-700">
+            Your account is not approved yet. Please contact an administrator.
+          </p>
           <div className="mt-4">
-            <button className="text-xs px-3 py-1 rounded bg-black text-white" onClick={() => signOut(auth)}>
+            <button
+              className="text-xs px-3 py-1 rounded bg-black text-white"
+              onClick={() => signOut(auth)}
+            >
               Sign out
             </button>
           </div>
@@ -357,7 +360,7 @@ export default function Page() {
     );
   }
 
-  /* ==================== APP UI ==================== */
+  // ----- UI: authed → show map + HUD -----
   const selected = spats.find((s) => s.intersection_id === selectedId) || spats[0];
 
   return (
@@ -365,7 +368,7 @@ export default function Page() {
       <div className="w-full h-screen relative">
         <div ref={mapContainerRef} className="absolute inset-0 h-full w-full" />
 
-        {/* HUD */}
+        {/* HUD panel */}
         <div className="absolute top-3 left-3 bg-white/90 backdrop-blur rounded-2xl shadow-lg p-4 w-80 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold">V2X Live View</h2>
@@ -381,18 +384,14 @@ export default function Page() {
           {/* Map style toggle */}
           <div className="flex gap-2">
             <button
-              className={`text-xs px-2 py-1 rounded ${
-                mapStyle === "streets" ? "bg-black text-white" : "bg-gray-200"
-              }`}
+              className={`text-xs px-2 py-1 rounded border ${mapStyle === "streets" ? "bg-black text-white" : "bg-white"}`}
               onClick={() => setMapStyle("streets")}
             >
-              Streets
+              Street
             </button>
             <button
-              className={`text-xs px-2 py-1 rounded ${
-                mapStyle === "satellite" ? "bg-black text-white" : "bg-gray-200"
-              }`}
-              onClick={() => setMapStyle("satellite")}
+              className={`text-xs px-2 py-1 rounded border ${mapStyle === "sat" ? "bg-black text-white" : "bg-white"}`}
+              onClick={() => setMapStyle("sat")}
             >
               Satellite
             </button>
@@ -401,7 +400,7 @@ export default function Page() {
           {/* Vehicles */}
           <section>
             <h3 className="text-sm font-semibold mb-1">Vehicles ({vehicles.length})</h3>
-            <div className="max-h-28 overflow-auto text-sm">
+            <div className="max-h-32 overflow-auto text-sm">
               {vehicles.length === 0 && <div className="text-gray-500">No vehicles yet…</div>}
               {vehicles.map((v) => (
                 <div key={v.id} className="flex items-center justify-between py-1 border-b border-gray-100">
@@ -414,7 +413,7 @@ export default function Page() {
             </div>
           </section>
 
-          {/* SPaT selector (no color swatches beside names) */}
+          {/* SPaT selector */}
           <section>
             <h3 className="text-sm font-semibold mb-1">SPaT Intersections ({spats.length})</h3>
 
@@ -459,43 +458,28 @@ export default function Page() {
           </section>
         </div>
 
-        {/* Bottom dock with phase cards */}
+        {/* (Optional) Bottom dock still shows per-phase cards; leave it out if you only want icons */}
         {selected?.phaseStates?.length ? (
-          <div className="absolute left-0 right-0 bottom-0 px-4 pb-3">
+          <div className="absolute left-0 right-0 bottom-0 px-4 pb-3 pointer-events-none">
             <div className="mx-auto max-w-6xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {selected.phaseStates.map((ps) => {
-                const color = lampHex(ps.state);
-                const approach = directionToApproach(ps.direction);
-                const arrows = arrowsForManeuver(ps.maneuver);
-
-                return (
-                  <div key={`card-${ps.phase}`} className="rounded-xl overflow-hidden shadow bg-neutral-800 text-white">
-                    <div className="px-3 py-2 flex items-center justify-between border-b border-neutral-700">
-                      <div className="text-sm font-semibold">
-                        {selected.intersection_name || selected.intersection_id} — P{ps.phase}
-                      </div>
-                      <div className="flex gap-1" title={ps.state}>
-                        <span
-                          className="inline-block w-2 h-2 rounded-full"
-                          style={{ background: "#16a34a", opacity: color === "#16a34a" ? 1 : 0.2 }}
-                        />
-                        <span
-                          className="inline-block w-2 h-2 rounded-full"
-                          style={{ background: "#f59e0b", opacity: color === "#f59e0b" ? 1 : 0.2 }}
-                        />
-                        <span
-                          className="inline-block w-2 h-2 rounded-full"
-                          style={{ background: "#e11d48", opacity: color === "#e11d48" ? 1 : 0.2 }}
-                        />
-                      </div>
-                    </div>
-                    <div className="px-3 py-3 flex items-center justify-between">
-                      <div className="text-lg font-bold">{arrows}</div>
-                      <div className="text-xs opacity-80">Dir: {approach}</div>
+              {selected.phaseStates.map((ps) => (
+                <div key={`card-${ps.phase}`} className="rounded-xl overflow-hidden shadow bg-neutral-800 text-white pointer-events-auto">
+                  <div className="px-3 py-2 flex items-center justify-between border-b border-neutral-700">
+                    <div className="text-sm font-semibold">
+                      {selected.intersection_name || selected.intersection_id} — P{ps.phase}
                     </div>
                   </div>
-                );
-              })}
+                  <div className="px-3 py-3 flex items-center justify-between">
+                    {/* You can render maneuver text here if you want */}
+                    <div className="text-xs opacity-80">
+                      {ps.maneuver ? ps.maneuver.replaceAll("-", " / ") : "—"}
+                    </div>
+                    <div className="text-xs opacity-80">
+                      {ps.direction ? ps.direction : ""}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         ) : null}
