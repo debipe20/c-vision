@@ -28,6 +28,8 @@ import platform
 import socket
 import time
 import json
+import argparse
+from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, db
 
@@ -128,11 +130,42 @@ def main():
 # Test seed (writes to /bsm and /spat for the web UI)
 # Usage: python3 sender.py --seed
 # -----------------------------
-import argparse
-from datetime import datetime
 
 def seed_test_records():
-    # Vehicle near downtown Austin
+    spat_payload = {
+        "SPaTInfo": [
+            {
+                "IntersectionName": "KearneyRd & WaterTower",
+                "IntersectionID": 2351,
+                "phaseStates": [
+                    {"phase": 2, "state": "permissiveMovementAllowed", "maneuver":"left-through", "direction": "NorthBound"},
+                    {"phase": 4, "state": "stopAndRemain", "maneuver":"left-right", "direction": "WestBound"},
+                    {"phase": 6, "state": "protectedMovementAllowed", "maneuver":"through-right", "direction": "SouthBound"}
+                ],
+                "lat": 41.711326,
+                "lon": -87.992046,
+                "timestamp": time.time()
+            },
+            {
+                "IntersectionName": "KearneyRd & WestgateRd",
+                "IntersectionID": 2350,
+                "phaseStates": [
+                    {"phase": 2, "state": "stopAndRemain", "maneuver":"left-through-right", "direction": "EastBound"},
+                    {"phase": 4, "state": "permissiveMovementAllowed", "maneuver":"left-through-right", "direction": "SouthBound"},
+                    {"phase": 6, "state": "stopAndRemain", "maneuver":"left-through-right", "direction": "WestBound"},
+                    {"phase": 8, "state": "permissiveMovementAllowed", "maneuver":"left-through-right", "direction": "NorthBound"}
+                ],
+                "lat": 41.715538,
+                "lon": -87.992211,
+                "timestamp": time.time()
+            }
+        ]
+    }
+
+    # Write to /spat (overwrites existing)
+    db.reference("spat").set(spat_payload)
+
+    # Vehicle near Argonne
     db.reference("bsm/test-veh-1").set({
         "lat": 41.710676,
         "lon": -87.992046,
@@ -141,24 +174,15 @@ def seed_test_records():
         "ts": int(time.time() * 1000)
     })
 
-    # One SPaT point nearby (simple 'green' state)
-    db.reference("spat/int-1").set({
-        "phaseStates": [
-            {"phase": 2, "state": "protectedMovementAllowed"}
-        ],
-        "lat": 41.711326,
-        "lon": -87.992046,
-        "timestamp": int(time.time())
-    })
-
-    # (Optional) keep your unified latest node in sync for debugging
+    # Optional: also bump a "latest" node for debugging/visibility
     db.reference("LatestV2XMessage").set({
         "type": "SEED",
         "timestamp": datetime.utcnow().isoformat() + "Z",
-        "payload": "Seeded BSM and SPaT demo data."
+        "payload": "Seeded SPaTInfo with two intersections."
     })
 
-    print("✅ Seeded demo BSM (/bsm/test-veh-1) and SPaT (/spat/int-1) records.")
+    print("✅ Seeded SPaTInfo demo at /spat")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="V2X sender")
