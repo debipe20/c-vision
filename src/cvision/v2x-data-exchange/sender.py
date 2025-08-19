@@ -138,9 +138,9 @@ def seed_test_records():
                 "IntersectionName": "KearneyRd & WaterTower",
                 "IntersectionID": 2351,
                 "phaseStates": [
-                    {"phase": 2, "state": "permissiveMovementAllowed", "maneuver":"left-through", "direction": "NorthBound"},
+                    {"phase": 2, "state": "permissiveMovementAllowed", "maneuver":"through-right", "direction": "NorthBound"},
                     {"phase": 4, "state": "stopAndRemain", "maneuver":"left-right", "direction": "WestBound"},
-                    {"phase": 6, "state": "protectedMovementAllowed", "maneuver":"through-right", "direction": "SouthBound"}
+                    {"phase": 6, "state": "protectedMovementAllowed", "maneuver":"left-through", "direction": "SouthBound"}
                 ],
                 "lat": 41.711326,
                 "lon": -87.992046,
