@@ -236,7 +236,22 @@ Skip GitHub deploy if not needed.
   }
 }
 ```
+
+- For multi-site hosting, it should look following:
+```js
+{
+  "hosting": [
+    {
+      "site": "c-vision-7e1ec",
+      "public": "out",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
+    }
+  ]
+}
+```
+
 - next.config.ts
+
 ```js
 const nextConfig = {
   output: 'export'
