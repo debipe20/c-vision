@@ -23,6 +23,7 @@ node -v
 ```bash
 git clone https://github.com/debipe20/debashis-workspace
 cd debashis-workspace
+git checkout <branch_name>
 ```
 
 2.  **Install dependencies**:
