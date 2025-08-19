@@ -244,6 +244,7 @@ Skip GitHub deploy if not needed.
     {
       "site": "c-vision-7e1ec",
       "public": "out",
+      "cleanUrls": true,
       "ignore": ["firebase.json", "**/.*", "**/node_modules/**"]
     }
   ]
