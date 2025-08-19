@@ -235,7 +235,7 @@ Skip GitHub deploy if not needed.
     ]
   }
 }
-
+```
 - next.config.ts
 ```js
 const nextConfig = {
