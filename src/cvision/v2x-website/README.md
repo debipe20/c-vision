@@ -214,13 +214,29 @@ npm install -g firebase-tools
 
 **2. Initialize Hosting**
 ```bash
+firebase login
 firebase init hosting
 ```
 Use "out" as the public directory.
 Choose Yes for single-page app.
 Skip GitHub deploy if not needed.
 
-**3. Update next.config.ts**
+**3. Update config files**
+- firebase.json
+```js
+{
+  "hosting": {
+    "public": "out",
+    "cleanUrls": true,
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
+}
+
+- next.config.ts
 ```js
 const nextConfig = {
   output: 'export'
