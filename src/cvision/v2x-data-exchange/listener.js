@@ -33,8 +33,8 @@ if (currentOS === 'linux') {
 } 
 
 else if (currentOS === 'win32') {
-  configFilePath = path.join('C:', 'Users', 'Documents', 'debashis-workspace', 'config', 'anl-master-config.json');
-  service_account_path = path.join('C:', 'Users', 'Documents', 'cvision-firebase-key.json');
+  configFilePath = path.join('C:', 'Users', 'ddas', 'Documents', 'debashis-workspace', 'config', 'anl-master-config.json');
+  service_account_path = path.join('C:', 'Users', 'ddas', 'Documents', 'cvision-firebase-key.json');
 }
 
 else {

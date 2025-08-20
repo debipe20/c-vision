@@ -25,6 +25,8 @@ Usage (normal mode):
 
 import os
 import platform
+import signal
+import sys
 import socket
 import time
 import json
@@ -42,7 +44,7 @@ if current_os == "Linux":
     
 elif current_os == "Windows":  # For Windows
     service_account_path = os.path.join(os.path.expanduser("~"), "Documents", "cvision-firebase-key.json")
-    config_file_path = os.path.join("C:\\", "Users", "Documents", "debashis-workspace", "config", "anl-master-config.json")
+    config_file_path = os.path.join("C:\\", "Users", "ddas", "Documents", "debashis-workspace", "config", "anl-master-config.json")
         
 else:
     raise OSError(f"Unsupported operating system: {current_os}")
@@ -52,7 +54,25 @@ firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://c-vision-7e1ec-default-rtdb.firebaseio.com/'
 })
 
+# Declare the socket globally so the signal handler can access it
+msgReceiverSocket = None
+
+def exit_gracefully(signum, frame):
+    """
+    Signal handler to close the socket and exit the program.
+    """
+    global msgReceiverSocket
+    print(f"\n👋 Received signal {signum}, shutting down gracefully...")
+    if msgReceiverSocket:
+        msgReceiverSocket.close()
+    sys.exit(0)
+
 def main():
+    """
+    Main function for the V2X sender.
+    """
+    global msgReceiverSocket
+    
     config_file = open(config_file_path, "r")
     config = json.load(config_file)
     config_file.close()
@@ -61,6 +81,8 @@ def main():
     port = config["PortNumber"]["V2XDataSender"]
     msgReceiverSocket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     msgReceiverSocket.bind((host_ip, port))
+    # Add this line here
+    msgReceiverSocket.settimeout(1.0) 
 
     payload_prefix = "Payload="
     map_identifier = "0012"
@@ -68,7 +90,13 @@ def main():
     bsm_identifier = "0014"
     
 
+    # Register the signal handler for Ctrl+C and Ctrl+Break on Windows
+    signal.signal(signal.SIGINT, exit_gracefully)
+    if platform.system() == "Windows":
+        signal.signal(signal.SIGBREAK, exit_gracefully)
+
     print(f"📡 Listening on {host_ip}:{port}")
+    print("Press Ctrl+C to quit.")
 
     while True:
         try:
@@ -116,6 +144,9 @@ def main():
 
             print(f"{msg_type} message uploaded to Firebase")
 
+        except socket.timeout:
+        # This is where your program checks for signals
+            continue
         except KeyboardInterrupt:
             break
         except Exception as e:
@@ -194,7 +225,3 @@ if __name__ == "__main__":
         seed_test_records()
     else:
         main()
-
-
-# if __name__ == '__main__':
-#     main()
