@@ -5,13 +5,15 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
 import { initializeApp, getApps } from "firebase/app";
-import { getDatabase, onValue, ref as dbRef } from "firebase/database";
+import { getDatabase, onValue, ref as dbRef, set as dbSet } from "firebase/database";
 import {
   getAuth,
   onAuthStateChanged,
   signOut,
   signInWithEmailAndPassword,
+  createUserWithEmailAndPassword, // <-- new import
 } from "firebase/auth";
+
 
 /* ==================== MAPBOX ==================== */
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
@@ -116,6 +118,7 @@ export default function Page() {
   const [pw, setPw] = useState("");
   const [authErr, setAuthErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
 
   // Optional approval gate
   const [approved, setApproved] = useState<boolean | null>(true);
@@ -354,33 +357,106 @@ export default function Page() {
 
   /* ==================== AUTH UI ==================== */
   if (authed === false) {
-    const onLogin = async () => {
-      try {
-        setAuthErr(null);
-        setBusy(true);
-        await signInWithEmailAndPassword(auth, email.trim(), pw);
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        setAuthErr(msg || "Login failed");
-      } finally {
-        setBusy(false);
-      }
-    };
+  const onLogin = async () => {
+    try {
+      setAuthErr(null);
+      setBusy(true);
+      await signInWithEmailAndPassword(auth, email.trim(), pw);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setAuthErr(msg || "Login failed");
+    } finally {
+      setBusy(false);
+    }
+  };
 
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="rounded-2xl shadow p-6 w-80 space-y-3 bg-white">
-          <h1 className="font-bold text-lg">Sign in</h1>
-          <input className="border rounded p-2 w-full" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <input className="border rounded p-2 w-full" type="password" placeholder="Password" value={pw} onChange={(e) => setPw(e.target.value)} />
-          {authErr && <div className="text-red-600 text-sm">{authErr}</div>}
-          <button className="rounded-xl px-4 py-2 shadow bg-black text-white w-full disabled:opacity-60" disabled={busy} onClick={onLogin}>
-            {busy ? "Signing in..." : "Sign in"}
-          </button>
+  const onCreate = async () => {
+    try {
+      setAuthErr(null);
+      setBusy(true);
+      const cred = await createUserWithEmailAndPassword(auth, email.trim(), pw);
+
+      // Mark user as NOT approved yet
+      await dbSet(dbRef(db, `allowed_users/${cred.user.uid}`), false);
+
+      // Optional minimal profile record
+      await dbSet(dbRef(db, `users/${cred.user.uid}`), {
+        email: cred.user.email ?? email.trim(),
+        createdAt: Date.now(),
+      });
+
+      // After signup they will see the "Access pending" screen automatically
+      // If you prefer to sign them out immediately, uncomment:
+      // await signOut(auth);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setAuthErr(msg || "Could not create account");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const isSignUp = mode === "signup";
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="rounded-2xl shadow p-6 w-80 space-y-3 bg-white">
+        <h1 className="font-bold text-lg text-center">
+          {isSignUp ? "Create account" : "Sign in"}
+        </h1>
+
+        <input
+          className="border rounded p-2 w-full"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <input
+          className="border rounded p-2 w-full"
+          type="password"
+          placeholder="Password"
+          value={pw}
+          onChange={(e) => setPw(e.target.value)}
+        />
+
+        {authErr && <div className="text-red-600 text-sm">{authErr}</div>}
+
+        <button
+          className="rounded-xl px-4 py-2 shadow bg-black text-white w-full disabled:opacity-60"
+          disabled={busy}
+          onClick={isSignUp ? onCreate : onLogin}
+        >
+          {busy ? (isSignUp ? "Creating..." : "Signing in...") : isSignUp ? "Create account" : "Sign in"}
+        </button>
+
+        <div className="text-xs text-center text-gray-600 mt-1">
+          {isSignUp ? (
+            <>
+              Already have an account?{" "}
+              <button className="underline" onClick={() => setMode("signin")}>
+                Sign in
+              </button>
+            </>
+          ) : (
+            <>
+              New here?{" "}
+              <button className="underline" onClick={() => setMode("signup")}>
+                Create an account
+              </button>
+            </>
+          )}
         </div>
+
+        {isSignUp && (
+          <div className="text-[11px] text-gray-500 text-center">
+            Your account will be pending until an admin approves it.
+          </div>
+        )}
       </div>
-    );
-  }
+    </div>
+  );
+}
+
 
   if (authed === null) return <div className="min-h-screen w-full bg-white" />;
 
@@ -409,7 +485,7 @@ export default function Page() {
         {/* HUD */}
         <div className="absolute top-3 left-3 bg-white/90 backdrop-blur rounded-2xl shadow-lg p-4 w-80 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold">V2X Live View</h2>
+            <h2 className="text-lg font-bold">C-VISION ANL-AMTL</h2>
             <button className="text-xs px-2 py-1 rounded bg-black text-white" onClick={() => signOut(auth)} title="Sign out">Sign out</button>
           </div>
 
