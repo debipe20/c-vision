@@ -11,8 +11,14 @@ import {
   onAuthStateChanged,
   signOut,
   signInWithEmailAndPassword,
-  createUserWithEmailAndPassword, // <-- new import
+  createUserWithEmailAndPassword,
 } from "firebase/auth";
+
+/** <-- NEW: static intersection config lives in a separate file */
+// import { INTERSECTIONS, type StaticIntersectionMap, type StaticPhase } from "@/config/intersections";
+// If your TS config doesn’t support "@/..." aliases, use:
+// import { INTERSECTIONS, type StaticIntersectionMap, type StaticPhase } from "../config/intersections";
+import { INTERSECTIONS, type StaticPhase } from "@/config/intersections";
 
 
 /* ==================== MAPBOX ==================== */
@@ -53,27 +59,36 @@ type Vehicle = {
 };
 
 type PhaseStateRaw = { phase: number; state: string; direction?: string; maneuver?: string };
-type SpatItemRaw = { IntersectionName?: string; IntersectionID?: number | string; phaseStates?: PhaseStateRaw[]; lat?: number; lon?: number; timestamp?: number };
+type SpatItemRaw = {
+  IntersectionName?: string;
+  IntersectionID?: number | string;
+  phaseStates?: PhaseStateRaw[];
+  lat?: number;
+  lon?: number;
+  timestamp?: number;
+};
 
 type PhaseState = { phase: number; state: string; direction?: string; maneuver?: string };
-type Spat = { intersection_id: string; intersection_name?: string; phaseStates: PhaseState[]; timestamp?: number; lat?: number; lon?: number };
+type Spat = {
+  intersection_id: string;
+  intersection_name?: string;
+  phaseStates: PhaseState[];
+  timestamp?: number;
+  lat?: number;
+  lon?: number;
+};
 
 type Approach = "N" | "E" | "S" | "W";
 
 /* ==================== HELPERS ==================== */
 function directionToApproach(d?: string): Approach {
   const s = (d || "").trim().toLowerCase();
-
-  // Map movement/labels directly (no inversion)
   if (s.includes("north")) return "N";
-  if (s.includes("east"))  return "E";
+  if (s.includes("east")) return "E";
   if (s.includes("south")) return "S";
-  if (s.includes("west"))  return "W";
-
-  // Fallback if missing/unknown
+  if (s.includes("west")) return "W";
   return "N";
 }
-
 
 function lampHex(state: string): string {
   const s = state.toLowerCase();
@@ -84,7 +99,9 @@ function lampHex(state: string): string {
 }
 function arrowsForManeuver(m?: string): string {
   const mvr = (m || "").toLowerCase();
-  const left = "↰", thru = "↑", right = "↱";
+  const left = "↰",
+    thru = "↑",
+    right = "↱";
   const parts: string[] = [];
   if (mvr.includes("left")) parts.push(left);
   if (mvr.includes("through")) parts.push(thru);
@@ -96,15 +113,32 @@ function arrowsForManeuver(m?: string): string {
 function hashToHue(id: string) {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return h % 360; // 0..359
+  return h % 360;
 }
 function colorFor(id: string) {
   const hue = hashToHue(id);
-  // vivid, readable core + lighter ring
   return {
     core: `hsl(${hue} 80% 45%)`,
     ring: `hsl(${hue} 85% 65%)`,
   };
+}
+
+/** Merge live phase states into static config */
+function mergePhases(
+  config: StaticPhase[],
+  live?: Array<{ phase: number; state?: string; direction?: string; maneuver?: string }>
+): PhaseState[] {
+  const byPhase = new Map<number, { state?: string; direction?: string; maneuver?: string }>();
+  (live || []).forEach((p) => byPhase.set(Number(p.phase), p));
+  return config.map((c) => {
+    const l = byPhase.get(c.phase);
+    return {
+      phase: c.phase,
+      state: l?.state ?? "stopAndRemain", // default red if nothing live yet
+      direction: l?.direction ?? c.direction,
+      maneuver: l?.maneuver ?? c.maneuver,
+    };
+  });
 }
 
 /* ==================== PAGE ==================== */
@@ -141,7 +175,11 @@ export default function Page() {
       setAuthed(!!u);
       if (u) {
         const r = dbRef(db, `allowed_users/${u.uid}`);
-        const off = onValue(r, (snap) => setApproved(snap.exists() ? Boolean(snap.val()) : false), () => setApproved(false));
+        const off = onValue(
+          r,
+          (snap) => setApproved(snap.exists() ? Boolean(snap.val()) : false),
+          () => setApproved(false)
+        );
         return () => off();
       } else {
         setApproved(null);
@@ -158,7 +196,10 @@ export default function Page() {
 
     mapRef.current = new mapboxgl.Map({
       container: mapContainerRef.current,
-      style: mapStyle === "satellite" ? "mapbox://styles/mapbox/satellite-streets-v12" : "mapbox://styles/mapbox/streets-v12",
+      style:
+        mapStyle === "satellite"
+          ? "mapbox://styles/mapbox/satellite-streets-v12"
+          : "mapbox://styles/mapbox/streets-v12",
       center: defaultCenter,
       zoom: 14,
     });
@@ -191,27 +232,43 @@ export default function Page() {
       }
     });
     return () => unsub();
-  }, [db, authed, approved]);
+  }, [db, authed, approved, selectedVehicleId]);
 
-  /* ==== SPaT (/spat/SPaTInfo) ==== */
+  /* ==== SPaT (primary: static config + merge live from /spat) ==== */
   useEffect(() => {
     if (authed !== true || approved === false) return;
+
+    // listen to legacy /spat -> SPaTInfo array
     const ref = dbRef(db, "spat");
     const unsub = onValue(ref, (snap) => {
       const root = snap.val() || {};
       const arr: SpatItemRaw[] = Array.isArray(root?.SPaTInfo) ? (root.SPaTInfo as SpatItemRaw[]) : [];
 
-      const list: Spat[] = arr.map((r, idx) => ({
-        intersection_id: r.IntersectionID != null ? String(r.IntersectionID) : `int-${idx + 1}`,
-        intersection_name: r.IntersectionName,
-        phaseStates: (r.phaseStates || []).map((p) => ({ phase: Number(p.phase), state: String(p.state), direction: p.direction, maneuver: p.maneuver })),
-        lat: typeof r.lat === "number" ? r.lat : undefined,
-        lon: typeof r.lon === "number" ? r.lon : undefined,
-        timestamp: r.timestamp,
-      }));
+      // Build map of live by id
+      const liveById: Record<string, { phaseStates?: PhaseStateRaw[]; timestamp?: number }> = {};
+      arr.forEach((r) => {
+        const id = r.IntersectionID != null ? String(r.IntersectionID) : "";
+        if (!id) return;
+        liveById[id] = { phaseStates: r.phaseStates || [], timestamp: r.timestamp };
+      });
+
+      // Drive UI from INTERSECTIONS (static) and merge live
+      const list: Spat[] = Object.keys(INTERSECTIONS).map((id) => {
+        const base = INTERSECTIONS[id];
+        const live = liveById[id];
+        return {
+          intersection_id: id,
+          intersection_name: base.name,
+          phaseStates: mergePhases(base.phases, live?.phaseStates),
+          lat: base.lat,
+          lon: base.lon,
+          timestamp: live?.timestamp,
+        };
+      });
 
       setSpats(list);
 
+      // Default selection + fly
       if (!selectedId && list.length) setSelectedId(list[0].intersection_id);
       const active = list.find((s) => s.intersection_id === (selectedId ?? list[0]?.intersection_id)) || list[0];
       const map = mapRef.current;
@@ -219,6 +276,7 @@ export default function Page() {
         map.flyTo({ center: [active.lon, active.lat], zoom: 17 });
       }
     });
+
     return () => unsub();
   }, [db, authed, approved, selectedId]);
 
@@ -275,7 +333,8 @@ export default function Page() {
         if (!document.getElementById("carPulseKeyframes")) {
           const style = document.createElement("style");
           style.id = "carPulseKeyframes";
-          style.textContent = `@keyframes carPulse {0%{transform: translate(-50%,-50%) scale(1); opacity:.7}50%{transform: translate(-50%,-50%) scale(1.8); opacity:.25}100%{transform: translate(-50%,-50%) scale(1); opacity:.7}}`;
+          style.textContent =
+            "@keyframes carPulse {0%{transform: translate(-50%,-50%) scale(1); opacity:.7}50%{transform: translate(-50%,-50%) scale(1.8); opacity:.25}100%{transform: translate(-50%,-50%) scale(1); opacity:.7}}";
           document.head.appendChild(style);
         }
 
@@ -286,7 +345,7 @@ export default function Page() {
         const el = marker.getElement() as HTMLDivElement;
         el.style.background = core;
         const arrow = el.children[0] as HTMLDivElement | undefined;
-        if (arrow) (arrow.style.borderBottom = `6px solid ${core}`);
+        if (arrow) arrow.style.borderBottom = `6px solid ${core}`;
         const pulse = el.children[1] as HTMLDivElement | undefined;
         if (pulse) pulse.style.background = ring;
       }
@@ -348,7 +407,7 @@ export default function Page() {
     });
 
     Object.keys(cache).forEach((id) => {
-      if (!spats.find((s) => s.intersection_id === id)) {
+      if (!spats.find((x) => x.intersection_id === id)) {
         cache[id].remove();
         delete cache[id];
       }
@@ -357,106 +416,101 @@ export default function Page() {
 
   /* ==================== AUTH UI ==================== */
   if (authed === false) {
-  const onLogin = async () => {
-    try {
-      setAuthErr(null);
-      setBusy(true);
-      await signInWithEmailAndPassword(auth, email.trim(), pw);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setAuthErr(msg || "Login failed");
-    } finally {
-      setBusy(false);
-    }
-  };
+    const onLogin = async () => {
+      try {
+        setAuthErr(null);
+        setBusy(true);
+        await signInWithEmailAndPassword(auth, email.trim(), pw);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        setAuthErr(msg || "Login failed");
+      } finally {
+        setBusy(false);
+      }
+    };
 
-  const onCreate = async () => {
-    try {
-      setAuthErr(null);
-      setBusy(true);
-      const cred = await createUserWithEmailAndPassword(auth, email.trim(), pw);
+    const onCreate = async () => {
+      try {
+        setAuthErr(null);
+        setBusy(true);
+        const cred = await createUserWithEmailAndPassword(auth, email.trim(), pw);
 
-      // Mark user as NOT approved yet
-      await dbSet(dbRef(db, `allowed_users/${cred.user.uid}`), false);
+        // Mark user as NOT approved yet
+        await dbSet(dbRef(db, `allowed_users/${cred.user.uid}`), false);
 
-      // Optional minimal profile record
-      await dbSet(dbRef(db, `users/${cred.user.uid}`), {
-        email: cred.user.email ?? email.trim(),
-        createdAt: Date.now(),
-      });
+        // Optional minimal profile record
+        await dbSet(dbRef(db, `users/${cred.user.uid}`), {
+          email: cred.user.email ?? email.trim(),
+          createdAt: Date.now(),
+        });
 
-      // After signup they will see the "Access pending" screen automatically
-      // If you prefer to sign them out immediately, uncomment:
-      // await signOut(auth);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      setAuthErr(msg || "Could not create account");
-    } finally {
-      setBusy(false);
-    }
-  };
+        // After signup they will see the "Access pending" screen automatically
+        // If you prefer to sign them out immediately, uncomment:
+        // await signOut(auth);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        setAuthErr(msg || "Could not create account");
+      } finally {
+        setBusy(false);
+      }
+    };
 
-  const isSignUp = mode === "signup";
+    const isSignUp = mode === "signup";
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="rounded-2xl shadow p-6 w-80 space-y-3 bg-white">
-        <h1 className="font-bold text-lg text-center">
-          {isSignUp ? "Create account" : "Sign in"}
-        </h1>
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="rounded-2xl shadow p-6 w-80 space-y-3 bg-white">
+          <h1 className="font-bold text-lg text-center">{isSignUp ? "Create account" : "Sign in"}</h1>
 
-        <input
-          className="border rounded p-2 w-full"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input
-          className="border rounded p-2 w-full"
-          type="password"
-          placeholder="Password"
-          value={pw}
-          onChange={(e) => setPw(e.target.value)}
-        />
+          <input
+            className="border rounded p-2 w-full"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <input
+            className="border rounded p-2 w-full"
+            type="password"
+            placeholder="Password"
+            value={pw}
+            onChange={(e) => setPw(e.target.value)}
+          />
 
-        {authErr && <div className="text-red-600 text-sm">{authErr}</div>}
+          {authErr && <div className="text-red-600 text-sm">{authErr}</div>}
 
-        <button
-          className="rounded-xl px-4 py-2 shadow bg-black text-white w-full disabled:opacity-60"
-          disabled={busy}
-          onClick={isSignUp ? onCreate : onLogin}
-        >
-          {busy ? (isSignUp ? "Creating..." : "Signing in...") : isSignUp ? "Create account" : "Sign in"}
-        </button>
+          <button
+            className="rounded-xl px-4 py-2 shadow bg-black text-white w-full disabled:opacity-60"
+            disabled={busy}
+            onClick={isSignUp ? onCreate : onLogin}
+          >
+            {busy ? (isSignUp ? "Creating..." : "Signing in...") : isSignUp ? "Create account" : "Sign in"}
+          </button>
 
-        <div className="text-xs text-center text-gray-600 mt-1">
-          {isSignUp ? (
-            <>
-              Already have an account?{" "}
-              <button className="underline" onClick={() => setMode("signin")}>
-                Sign in
-              </button>
-            </>
-          ) : (
-            <>
-              New here?{" "}
-              <button className="underline" onClick={() => setMode("signup")}>
-                Create an account
-              </button>
-            </>
+          <div className="text-xs text-center text-gray-600 mt-1">
+            {isSignUp ? (
+              <>
+                Already have an account?{" "}
+                <button className="underline" onClick={() => setMode("signin")}>
+                  Sign in
+                </button>
+              </>
+            ) : (
+              <>
+                New here?{" "}
+                <button className="underline" onClick={() => setMode("signup")}>
+                  Create an account
+                </button>
+              </>
+            )}
+          </div>
+
+          {isSignUp && (
+            <div className="text-[11px] text-gray-500 text-center">Your account will be pending until an admin approves it.</div>
           )}
         </div>
-
-        {isSignUp && (
-          <div className="text-[11px] text-gray-500 text-center">
-            Your account will be pending until an admin approves it.
-          </div>
-        )}
       </div>
-    </div>
-  );
-}
-
+    );
+  }
 
   if (authed === null) return <div className="min-h-screen w-full bg-white" />;
 
@@ -467,7 +521,9 @@ export default function Page() {
           <h2 className="text-lg font-bold mb-2">Access pending</h2>
           <p className="text-sm text-gray-700">Your account is not approved yet. Please contact an administrator.</p>
           <div className="mt-4">
-            <button className="text-xs px-3 py-1 rounded bg-black text-white" onClick={() => signOut(auth)}>Sign out</button>
+            <button className="text-xs px-3 py-1 rounded bg-black text-white" onClick={() => signOut(auth)}>
+              Sign out
+            </button>
           </div>
         </div>
       </div>
@@ -486,13 +542,25 @@ export default function Page() {
         <div className="absolute top-3 left-3 bg-white/90 backdrop-blur rounded-2xl shadow-lg p-4 w-80 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold">C-VISION ANL-AMTL</h2>
-            <button className="text-xs px-2 py-1 rounded bg-black text-white" onClick={() => signOut(auth)} title="Sign out">Sign out</button>
+            <button className="text-xs px-2 py-1 rounded bg-black text-white" onClick={() => signOut(auth)} title="Sign out">
+              Sign out
+            </button>
           </div>
 
           {/* Map style toggle */}
           <div className="flex gap-2">
-            <button className={`text-xs px-2 py-1 rounded ${mapStyle === "streets" ? "bg-black text-white" : "bg-gray-200"}`} onClick={() => setMapStyle("streets")}>Streets</button>
-            <button className={`text-xs px-2 py-1 rounded ${mapStyle === "satellite" ? "bg-black text-white" : "bg-gray-200"}`} onClick={() => setMapStyle("satellite")}>Satellite</button>
+            <button
+              className={`text-xs px-2 py-1 rounded ${mapStyle === "streets" ? "bg-black text-white" : "bg-gray-200"}`}
+              onClick={() => setMapStyle("streets")}
+            >
+              Streets
+            </button>
+            <button
+              className={`text-xs px-2 py-1 rounded ${mapStyle === "satellite" ? "bg-black text-white" : "bg-gray-200"}`}
+              onClick={() => setMapStyle("satellite")}
+            >
+              Satellite
+            </button>
           </div>
 
           {/* Vehicles dropdown */}
@@ -510,21 +578,23 @@ export default function Page() {
                 }
               }}
             >
-              {vehicles.map((v) => {
-                const { core } = colorFor(v.id);
-                return (
-                  <option key={v.id} value={v.id}>
-                    {v.id}
-                  </option>
-                );
-              })}
+              {vehicles.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.id}
+                </option>
+              ))}
             </select>
+
             {/* Tiny legend chips */}
             <div className="flex flex-wrap gap-1">
               {vehicles.slice(0, 8).map((v) => {
                 const { core } = colorFor(v.id);
                 return (
-                  <span key={`chip-${v.id}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] border" style={{ borderColor: core }}>
+                  <span
+                    key={`chip-${v.id}`}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] border"
+                    style={{ borderColor: core }}
+                  >
                     <span className="inline-block w-2 h-2 rounded-full" style={{ background: core }} />
                     <span className="font-mono truncate max-w-[9rem]">{v.id}</span>
                   </span>
@@ -570,9 +640,18 @@ export default function Page() {
                     <div className="px-3 py-2 flex items-center justify-between border-b border-neutral-700">
                       <div className="text-sm font-semibold">{selected.intersection_name || selected.intersection_id} — P{ps.phase}</div>
                       <div className="flex gap-1" title={ps.state}>
-                        <span className="inline-block w-2 h-2 rounded-full" style={{ background: "#16a34a", opacity: color === "#16a34a" ? 1 : 0.2 }} />
-                        <span className="inline-block w-2 h-2 rounded-full" style={{ background: "#f59e0b", opacity: color === "#f59e0b" ? 1 : 0.2 }} />
-                        <span className="inline-block w-2 h-2 rounded-full" style={{ background: "#e11d48", opacity: color === "#e11d48" ? 1 : 0.2 }} />
+                        <span
+                          className="inline-block w-2 h-2 rounded-full"
+                          style={{ background: "#16a34a", opacity: color === "#16a34a" ? 1 : 0.2 }}
+                        />
+                        <span
+                          className="inline-block w-2 h-2 rounded-full"
+                          style={{ background: "#f59e0b", opacity: color === "#f59e0b" ? 1 : 0.2 }}
+                        />
+                        <span
+                          className="inline-block w-2 h-2 rounded-full"
+                          style={{ background: "#e11d48", opacity: color === "#e11d48" ? 1 : 0.2 }}
+                        />
                       </div>
                     </div>
                     <div className="px-3 py-3 flex items-center justify-between">
