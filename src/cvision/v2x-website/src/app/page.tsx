@@ -234,25 +234,38 @@ export default function Page() {
     return () => unsub();
   }, [db, authed, approved, selectedVehicleId]);
 
-  /* ==== SPaT (primary: static config + merge live from /spat) ==== */
+  /* ==== SPaT (merge static config with live states from DB) ==== */
   useEffect(() => {
     if (authed !== true || approved === false) return;
 
-    // listen to legacy /spat -> SPaTInfo array
     const ref = dbRef(db, "spat");
     const unsub = onValue(ref, (snap) => {
       const root = snap.val() || {};
-      const arr: SpatItemRaw[] = Array.isArray(root?.SPaTInfo) ? (root.SPaTInfo as SpatItemRaw[]) : [];
 
-      // Build map of live by id
+      // Build a map: id -> { phaseStates, timestamp }
       const liveById: Record<string, { phaseStates?: PhaseStateRaw[]; timestamp?: number }> = {};
-      arr.forEach((r) => {
-        const id = r.IntersectionID != null ? String(r.IntersectionID) : "";
-        if (!id) return;
-        liveById[id] = { phaseStates: r.phaseStates || [], timestamp: r.timestamp };
-      });
 
-      // Drive UI from INTERSECTIONS (static) and merge live
+      if (Array.isArray(root?.SPaTInfo)) {
+        // --- legacy array shape ---
+        (root.SPaTInfo as SpatItemRaw[]).forEach((r) => {
+          const id = r.IntersectionID != null ? String(r.IntersectionID) : "";
+          if (!id) return;
+          liveById[id] = { phaseStates: r.phaseStates || [], timestamp: r.timestamp };
+        });
+      } else if (root && typeof root === "object") {
+        // --- new keyed shape: /spat/<id>/{phaseStates, timestamp} ---
+        Object.keys(root).forEach((id) => {
+          const node = root[id];
+          if (node && typeof node === "object" && Array.isArray(node.phaseStates)) {
+            liveById[String(id)] = {
+              phaseStates: node.phaseStates as PhaseStateRaw[],
+              timestamp: typeof node.timestamp === "number" ? node.timestamp : undefined,
+            };
+          }
+        });
+      }
+
+      // Drive UI from static INTERSECTIONS + merge live by phase
       const list: Spat[] = Object.keys(INTERSECTIONS).map((id) => {
         const base = INTERSECTIONS[id];
         const live = liveById[id];
@@ -268,9 +281,10 @@ export default function Page() {
 
       setSpats(list);
 
-      // Default selection + fly
+      // Default selection + camera fly
       if (!selectedId && list.length) setSelectedId(list[0].intersection_id);
-      const active = list.find((s) => s.intersection_id === (selectedId ?? list[0]?.intersection_id)) || list[0];
+      const active =
+        list.find((s) => s.intersection_id === (selectedId ?? list[0]?.intersection_id)) || list[0];
       const map = mapRef.current;
       if (active && map && typeof active.lon === "number" && typeof active.lat === "number") {
         map.flyTo({ center: [active.lon, active.lat], zoom: 17 });
