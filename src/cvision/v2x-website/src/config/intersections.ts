@@ -11,7 +11,7 @@ export type StaticIntersectionMap = Record<string, StaticIntersection>;
 /** Configure your 5 intersections here */
 export const INTERSECTIONS: StaticIntersectionMap = {
   "2351": {
-    name: "KearneyRd & WaterTower",
+    name: "Kearney Rd & WaterTower Rd",
     lat: 41.711326,
     lon: -87.992046,
     phases: [
@@ -21,7 +21,7 @@ export const INTERSECTIONS: StaticIntersectionMap = {
     ],
   },
   "2350": {
-    name: "KearneyRd & WestgateRd",
+    name: "Kearney Rd & Westgate Rd",
     lat: 41.715538,
     lon: -87.992211,
     phases: [
@@ -32,7 +32,7 @@ export const INTERSECTIONS: StaticIntersectionMap = {
     ],
   },
   "3002": {
-    name: "RooseveltRd & CanalSt",
+    name: "Roosevelt Rd & Canal St",
     lat: 41.867226,
     lon: -87.639224, 
     phases: [
@@ -47,7 +47,7 @@ export const INTERSECTIONS: StaticIntersectionMap = {
     ],
   },
   "3006": {
-    name: "RooseveltRd & MichiganAve",
+    name: "Roosevelt Rd & Michigan Ave",
     lat: 41.867454, 
     lon: -87.624141, 
     phases: [
@@ -62,7 +62,7 @@ export const INTERSECTIONS: StaticIntersectionMap = {
     ],
   },
   "44383": {
-    name: "DaisyMountainDr & GavilanPeakPkwy",
+    name: "DaisyMountain Dr & GavilanPeak Pkwy",
     lat: 33.842918,
     lon: -112.135202,
     phases: [

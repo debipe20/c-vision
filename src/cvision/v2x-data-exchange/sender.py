@@ -193,8 +193,7 @@ def push_spat_update(int_id: str, phases: List[int]) -> None:
         "timestamp": int(time.time() * 1000),   # ms
         "phaseStates": phase_states,
     }
-    db.reference(f"spat/{int_id}").set(payload)
-
+    db.reference(f"intersection_status/{int_id}").set(payload)
 
 # --- Vehicle updates (both new + back-compat) ---
 def push_vehicle_update(veh_id: str, lat: float, lon: float,
@@ -202,24 +201,13 @@ def push_vehicle_update(veh_id: str, lat: float, lon: float,
     now_ms = int(time.time() * 1000)
 
     # New slim path (optional, keep if you plan to migrate UI later)
-    db.reference(f"bsm/{veh_id}").set({
+    db.reference(f"vehicle_status/{veh_id}").set({
         "lat": lat,
         "lon": lon,
         "speed": speed_mps,
         "heading": heading_deg,
         "timestamp": now_ms,
     })
-
-    # Backward-compatible path & field names for the current UI
-    db.reference(f"bsm/{veh_id}").set({
-        "lat": lat,
-        "lon": lon,
-        "speed_mps": speed_mps,
-        "heading_deg": heading_deg,
-        "ts": now_ms,
-    })
-
-
 
 def seed_test_records(loop: bool = False, period_sec: int = 5) -> None:
     """Seed slim SPaT updates + vehicle updates for testing."""
