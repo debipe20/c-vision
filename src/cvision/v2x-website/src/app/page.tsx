@@ -214,10 +214,10 @@ export default function Page() {
     };
   }, [authed, mapStyle]);
 
-  /* ==== Vehicles (/bsm) ==== */
+  /* ==== Vehicles (/vehicle_status) ==== */
   useEffect(() => {
     if (authed !== true || approved === false) return;
-    const ref = dbRef(db, "bsm");
+    const ref = dbRef(db, "vehicle_status");
     const unsub = onValue(ref, (snap) => {
       const val = snap.val() || {};
       const list: Vehicle[] = Object.keys(val).map((key) => ({ ...val[key], id: String(key) }));
@@ -238,7 +238,7 @@ export default function Page() {
   useEffect(() => {
     if (authed !== true || approved === false) return;
 
-    const ref = dbRef(db, "spat");
+    const ref = dbRef(db, "intersection_status");
     const unsub = onValue(ref, (snap) => {
       const root = snap.val() || {};
 
@@ -619,7 +619,7 @@ export default function Page() {
 
           {/* SPaT selector */}
           <section>
-            <h3 className="text-sm font-semibold mb-1">SPaT Intersections ({spats.length})</h3>
+            <h3 className="text-sm font-semibold mb-1">Intersections ({spats.length})</h3>
             <select
               className="w-full border rounded p-1 text-sm mb-2"
               value={selectedId ?? (spats[0]?.intersection_id ?? "")}
