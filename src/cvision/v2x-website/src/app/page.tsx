@@ -188,9 +188,16 @@ export default function Page() {
     return () => unsub();
   }, [auth, db]);
 
+  /* ==== Force default map style after sign-in/approval */
+  useEffect(() => {
+    if (authed === true && approved !== false) {
+      setMapStyle("streets");   // ensure default
+    }
+  }, [authed, approved]);
+
   /* ==== Map init (recreates when style changes) ==== */
   useEffect(() => {
-    if (!mapContainerRef.current || mapRef.current || authed !== true) return;
+    if (!mapContainerRef.current || mapRef.current || authed !== true || approved === false) return;
 
     const defaultCenter: [number, number] = [-87.992046, 41.711326];
 
@@ -212,7 +219,7 @@ export default function Page() {
       mapRef.current?.remove();
       mapRef.current = null;
     };
-  }, [authed, mapStyle]);
+  }, [authed, approved, mapStyle]);
 
   /* ==== Vehicles (/vehicle_status) ==== */
   useEffect(() => {
@@ -449,8 +456,8 @@ export default function Page() {
         setBusy(true);
         const cred = await createUserWithEmailAndPassword(auth, email.trim(), pw);
 
-        // Mark user as NOT approved yet
-        await dbSet(dbRef(db, `allowed_users/${cred.user.uid}`), false);
+        // Queue the user for admin review (one-time self-create allowed by rules)
+        await dbSet(dbRef(db, `pending_users/${cred.user.uid}`), true);
 
         // Optional minimal profile record
         await dbSet(dbRef(db, `users/${cred.user.uid}`), {
