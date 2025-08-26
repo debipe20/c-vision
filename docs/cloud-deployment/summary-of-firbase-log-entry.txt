@@ -1,0 +1,39 @@
+Let's break down the common fields you see in a log entry:
+
+2025-07-22 09:01:25.736 (and similar timestamps): This is the timestamp when the log entry was recorded.
+
+POST 200 179 B 64 ms (and similar):
+
+POST: The HTTP method of the incoming request that triggered the function.
+
+200: The HTTP status code returned by your Cloud Function (200 OK, indicating success).
+
+179 B: The size of the response body in bytes.
+
+64 ms: The latency of the request (how long it took the function to process the request).
+
+python-reque... https://ingest-spat-data-hww35uderq-uc.a.run.app: This indicates the request that triggered the function. The URL is your deployed Cloud Function's endpoint.
+
+Successfully ingested ENCODED SPaT data with ID: 39772f1a-23f5-4f78-a00d-007831b454ad from IP: 169.254.169.126: This is the print() statement from your main.py function. It confirms that your function executed successfully, providing the unique ID it generated for the data and the source IP address.
+
+{ httpRequest: {...} }: This field contains details about the HTTP request that triggered the log entry.
+
+insertId: A unique identifier for this specific log entry.
+
+labels: Key-value pairs that help categorize and filter logs (e.g., logName, receiveTimestamp).
+
+logName: The name of the log stream. For Cloud Functions, it often includes run.googleapis.com/requests for request logs.
+
+receiveTimestamp: The timestamp when the logging service received the log entry.
+
+resource: Information about the Google Cloud resource that generated the log (e.g., type: "cloud_run_revision", labels: { "service_name": "ingest-spat-data", "location": "us-central1" }).
+
+severity: The severity level of the log entry (e.g., INFO, ERROR, WARNING). Your print() statements typically result in INFO severity.
+
+spanId and trace: These are related to distributed tracing, allowing you to follow a request's path through multiple services if you have a complex architecture.
+
+timestamp: The time the event occurred.
+
+Other INFO messages (e.g., Firebase Admin SDK initialized., DEFAULT STARTUP TCP probe succeeded...): These are informational messages related to your function's cold start, initialization, or internal processes that the Cloud Functions runtime provides.
+
+In summary, the log entries provide a comprehensive record of your function's execution, including when it was triggered, how it responded, what it printed, and various technical details about the environment.
