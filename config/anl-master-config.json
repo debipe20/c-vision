@@ -5,6 +5,7 @@
 	"PortNumber": {
 		"V2XDataSender":46053,
 		"V2XDataReceiver":50002,
+		"V2XDataManager":50003,
 		"MessageDecoder": 1516,
 		"BsmGenerator": 5398,
 		"VehicleController": 1025,
