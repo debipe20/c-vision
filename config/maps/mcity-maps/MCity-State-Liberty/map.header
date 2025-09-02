@@ -1,0 +1,11 @@
+Version=0.7
+Type=MAP
+PSID=0xE0000017
+Priority=7
+TxMode=ALT
+TxChannel=172
+TxInterval=
+DeliveryStart=
+DeliveryStop=
+Signature=False
+Encryption=False
