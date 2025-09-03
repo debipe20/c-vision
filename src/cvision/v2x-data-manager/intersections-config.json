@@ -1,0 +1,9 @@
+{
+  "intersections": [
+    { "id": "2351",  "name": "KearneyRd & WaterTower",          "phases": [2, 4, 6] },
+    { "id": "2350",  "name": "KearneyRd & WestgateRd",          "phases": [2, 4, 6, 8] },
+    { "id": "3002",  "name": "RooseveltRd & CanalSt",           "phases": [1, 2, 3, 4, 5, 6, 7, 8] },
+    { "id": "3006",  "name": "RooseveltRd & MichiganAve",       "phases": [1, 2, 3, 4, 5, 6, 7, 8] },
+    { "id": "44383", "name": "DaisyMountainDr & GavilanPeakPk", "phases": [1, 2, 3, 4, 5, 6, 7, 8] }
+  ]
+}
