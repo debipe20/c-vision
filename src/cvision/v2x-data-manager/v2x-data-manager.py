@@ -22,6 +22,7 @@ import os
 import platform
 import sys 
 from SPaTManager import SpatManager
+from BsmManager import BsmManager
 
 def main():
 
@@ -47,6 +48,7 @@ def main():
     v2x_data_manager_socket.bind((host_ip, port))
 
     spatManager = SpatManager()
+    bsmManager = BsmManager()
 
     try:
         while True:
@@ -54,8 +56,12 @@ def main():
             data = data.decode()
             receivedMessage = json.loads(data)
             print("Received following message:\n", receivedMessage)
+            
             if receivedMessage["MsgType"]== "SPaT":
                 spatManager.manage_spat_data(receivedMessage)
+
+            elif receivedMessage["MsgType"]== "BSM":
+                bsmManager.manage_bsm_data(receivedMessage)
 
     except KeyboardInterrupt:
         print("\nKeyboardInterrupt received. Shutting down gracefully...")
