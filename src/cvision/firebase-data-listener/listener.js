@@ -75,8 +75,10 @@ ref.on('value', (snapshot) => {
   console.log('Latest V2X message received:', data);
 
   // fs.writeFileSync('latest.json', JSON.stringify(data, null, 2));
-
-  const udpPayload = Buffer.from(JSON.stringify(data));
+  
+  // const udpPayload = Buffer.from(JSON.stringify(data)); // Send full json field
+  
+  const udpPayload = Buffer.from(data.payload); // Send only the payload field
   udpClient.send(udpPayload, 0, udpPayload.length, receiver_port, host_ip, (err) => {
     if (err) console.error('UDP send error:', err);
   });

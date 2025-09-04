@@ -1,3 +1,19 @@
+"""
+**********************************************************************************
+SpatManager.py
+Created by: Debashis Das
+Argonne National Laboratory
+Transportation and Power Systems Division
+
+**********************************************************************************
+
+Description:
+------------
+Parses SPaT-like JSON messages, normalizes phase states to a canonical schema,
+and prepares intersection dictionaries for publishing to Firebase RTDB. Also
+ensures Firebase is initialized exactly once for the current process.
+**********************************************************************************
+"""
 
 import time
 import json
@@ -8,39 +24,68 @@ from typing import Dict, List, Tuple
 import firebase_admin
 from firebase_admin import credentials, db
 
+# Map J2735 (lower-cased, hyphenated) states to canonical output states.
 STATE_MAP: Dict[str, str] = {
     "red": "stopAndRemain",
     "permissive_green": "permissiveMovementAllowed",
     "protected_green": "protectedMovementAllowed",
     "permissive_yellow": "yellow",
-    "protected_yellow": "yellow",
-    # Fallbacks if they ever appear
-    "unknown": "stopAndRemain",
+    "protected_yellow": "yellow",    
     "dark": "stopAndRemain",
     "flashing_red": "stopAndRemain",
     "flashing_yellow": "yellow",
+    "unknown": "stopAndRemain"
 }
 
 class SpatManager:
+    """Manages SPaT processing and intersection phase state publishing."""
     def __init__(self):
         """
+        Initialize the SPaT manager, Firebase, and static intersection data.
+
+        This constructor:
+          1) Ensures Firebase is initialized (once).
+          2) Loads configured phases and human-readable names for intersections.
+          3) Initializes any required RTDB structure for intersection storage.
         """
         self.get_firebase_credential()
         self.phases_by_intersection_id, self.intersections_name = self.load_phases_and_names()
         self.init_intersections_store()
         
     def get_firebase_credential(self):
+        """
+        Initialize Firebase if not already initialized.
+
+        Loads service account JSON from `~/Documents/cvision-firebase-key.json`
+        and sets the Realtime Database URL. If the default app exists, this is a no-op.
+
+        Raises:
+            FileNotFoundError: If the service account file cannot be found.
+            ValueError: If the service account file is malformed.
+        """
         current_os = platform.system()
         if current_os == "Linux":
             service_account_path = os.path.expanduser("~") + "/Documents/cvision-firebase-key.json"
         
         cred = credentials.Certificate(service_account_path)
-        firebase_admin.initialize_app(cred, {
-            'databaseURL': 'https://c-vision-7e1ec-default-rtdb.firebaseio.com/'
-        })
+        try:
+            firebase_admin.get_app()
+        except ValueError:
+            firebase_admin.initialize_app(cred, {
+                'databaseURL': 'https://c-vision-7e1ec-default-rtdb.firebaseio.com/'
+            })
 
     def init_intersections_store(self):
-        """Create an in-memory dict for all intersections (lazy-inited)."""
+        """
+        reate an in-memory dict for all intersections (lazy-inited).
+        Optionally create or prime RTDB nodes for known intersections.
+
+        This hook allows you to pre-create paths like `intersections/{id}` or to
+        seed default values. Safe to be a no-op if not needed.
+
+        Side Effects:
+            May write scaffolding entries to RTDB.
+        """
         self.intersections_store = {}
         now_ms = int(time.time() * 1000)
         for intersection_id, phases in self.phases_by_intersection_id.items():
@@ -55,6 +100,18 @@ class SpatManager:
             }
 
     def load_phases_and_names(self, path: str = "intersections-config.json") -> Tuple[Dict[str, List[int]], Dict[str, str]]:
+        """Load configured phases and display names for known intersections.
+
+        Returns:
+            A tuple (phases_by_intersection_id, intersections_name):
+                - phases_by_intersection_id: dict mapping str(intersection_id) -> [phase_numbers...]
+                - intersections_name: dict mapping str(intersection_id) -> human-readable name
+
+        Notes:
+            Implementation is expected to read from a local config (e.g., JSON)
+            that enumerates each intersection's valid phase numbers and label.
+        """
+
         with open(path, "r", encoding="utf-8") as intersections_config_file:
             intersections_config_data = json.load(intersections_config_file)
 
@@ -89,9 +146,24 @@ class SpatManager:
         """
         Map incoming SPaT JSON into payload and write to Firebase.
         Uses direct indexing (fast) and emits only configured phases.
+        
+        Args:
+            jsonString:
+
+        Returns:
+            A tuple (intersection_id, intersection_data_dictionary)
+        
+        Raises:
+            KeyError: If the intersection ID is unknown to the local config.
+            TypeError: If fields are missing or not in the expected type/shape.
+
+        Notes:
+            - Unknown or missing phases (relative to config) are filled as 'unknown'.
+            - Extra phases present in the message but not in the config are ignored
+              (a warning is emitted).
         """
         intersection_id = str(jsonString["Spat"]["intersectionState"]["intersectionID"])
-        intersection_id = str(2351)
+        # intersection_id = str(2351)
         phases_config = self.phases_by_intersection_id.get(intersection_id)
         if phases_config is None:
             raise KeyError(f"Unknown intersection id: {intersection_id}")
@@ -158,8 +230,6 @@ class SpatManager:
         # Build payload once via helper
         intersection_id, intersection_data_dictionary = self.generate_intersection_data_dictionary(jsonString)
 
-        
-        
         if intersection_id in self.intersections_store:
             self.intersections_store[intersection_id]["timestamp"] = intersection_data_dictionary["timestamp"]
             self.intersections_store[intersection_id]["phaseStates"] = intersection_data_dictionary["phaseStates"]
