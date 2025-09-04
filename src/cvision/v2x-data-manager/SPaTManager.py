@@ -35,9 +35,12 @@ class SpatManager:
             service_account_path = os.path.expanduser("~") + "/Documents/cvision-firebase-key.json"
         
         cred = credentials.Certificate(service_account_path)
-        firebase_admin.initialize_app(cred, {
-            'databaseURL': 'https://c-vision-7e1ec-default-rtdb.firebaseio.com/'
-        })
+        try:
+            firebase_admin.get_app()
+        except ValueError:
+            firebase_admin.initialize_app(cred, {
+                'databaseURL': 'https://c-vision-7e1ec-default-rtdb.firebaseio.com/'
+            })
 
     def init_intersections_store(self):
         """Create an in-memory dict for all intersections (lazy-inited)."""
@@ -91,7 +94,7 @@ class SpatManager:
         Uses direct indexing (fast) and emits only configured phases.
         """
         intersection_id = str(jsonString["Spat"]["intersectionState"]["intersectionID"])
-        intersection_id = str(2351)
+        # intersection_id = str(2351)
         phases_config = self.phases_by_intersection_id.get(intersection_id)
         if phases_config is None:
             raise KeyError(f"Unknown intersection id: {intersection_id}")
@@ -158,8 +161,6 @@ class SpatManager:
         # Build payload once via helper
         intersection_id, intersection_data_dictionary = self.generate_intersection_data_dictionary(jsonString)
 
-        
-        
         if intersection_id in self.intersections_store:
             self.intersections_store[intersection_id]["timestamp"] = intersection_data_dictionary["timestamp"]
             self.intersections_store[intersection_id]["phaseStates"] = intersection_data_dictionary["phaseStates"]
