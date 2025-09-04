@@ -229,7 +229,8 @@ string MsgDecoder::bsmDecoder(string bsmPayload)
         basicVehicle.setWidth_cm(bsmOut.vehWidth);
         jsonString = basicVehicle.basicVehicle2Json();
     }
-
+    
+    cout << jsonString << endl;
     return jsonString;
 }
 

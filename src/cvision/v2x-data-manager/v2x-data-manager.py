@@ -9,7 +9,6 @@ Transportation and Power Systems Division
 Description:
 ------------
 Listens for V2X messages forwarded from Firebase by listener.js over UDP.
-Prints/logs received messages. Can be extended to validate and acknowledge BSM messages.
 
 Usage:
     python3 v2x-data-manager.py
@@ -21,10 +20,16 @@ import json
 import os
 import platform
 import sys 
-from SPaTManager import SpatManager
+from SpatManager import SpatManager
+from BsmManager import BsmManager
 
 def main():
+    """Entry point for the V2X data manager.
 
+    Creates managers (SPaT/BSM), then listens for incoming messages and dispatches
+    them to the appropriate handler. This function is intended to be invoked from
+    the module `__main__` guard.
+    """
     current_os = platform.system()
         
     if current_os == "Linux":
@@ -47,6 +52,7 @@ def main():
     v2x_data_manager_socket.bind((host_ip, port))
 
     spatManager = SpatManager()
+    bsmManager = BsmManager()
 
     try:
         while True:
@@ -54,8 +60,12 @@ def main():
             data = data.decode()
             receivedMessage = json.loads(data)
             print("Received following message:\n", receivedMessage)
+            
             if receivedMessage["MsgType"]== "SPaT":
                 spatManager.manage_spat_data(receivedMessage)
+
+            elif receivedMessage["MsgType"]== "BSM":
+                bsmManager.manage_bsm_data(receivedMessage)
 
     except KeyboardInterrupt:
         print("\nKeyboardInterrupt received. Shutting down gracefully...")

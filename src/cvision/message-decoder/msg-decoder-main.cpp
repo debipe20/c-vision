@@ -27,7 +27,7 @@ int main() {
     MsgDecoder msgDecoder;
     const string HostIP = jsonObject["IPAddress"]["HostIp"].asString();
     UdpSocket msgDecoderSocket(static_cast<short unsigned int>(jsonObject["PortNumber"]["V2XDataReceiver"].asInt()));
-    const int spatManagerPort = static_cast<short unsigned int>(jsonObject["PortNumber"]["V2XDataManager"].asInt());
+    const int v2xDataManagerPort = static_cast<short unsigned int>(jsonObject["PortNumber"]["V2XDataManager"].asInt());
     
     char receiveBuffer[2048];
     // string receivedPayload{};
@@ -39,9 +39,8 @@ int main() {
     {
         msgDecoderSocket.receiveData(receiveBuffer, sizeof(receiveBuffer));
         string receivedPayload(receiveBuffer);
-        cout << receivedPayload << endl;
+        cout << "Received following payload \n" << receivedPayload << endl;
         size_t pos = receivedPayload.find("001");
-        cout << pos << endl;
         receivedPayload = receivedPayload.erase(0,pos);
         
         msgType = msgDecoder.getMessageType(receivedPayload);
@@ -54,13 +53,15 @@ int main() {
             else if (msgType == MsgEnum::DSRCmsgID_bsm)
             {
                 cout << "Received BSM" <<endl;
+                sendingJsonString = msgDecoder.bsmDecoder(receivedPayload);
+                msgDecoderSocket.sendData(HostIP, static_cast<short unsigned int>(v2xDataManagerPort), sendingJsonString);
             }
 
             else if (msgType == MsgEnum::DSRCmsgID_spat)
             {
                 cout << "Received SPaT" <<endl;
                 sendingJsonString = msgDecoder.spatDecoder(receivedPayload);
-                msgDecoderSocket.sendData(HostIP, static_cast<short unsigned int>(spatManagerPort), sendingJsonString);
+                msgDecoderSocket.sendData(HostIP, static_cast<short unsigned int>(v2xDataManagerPort), sendingJsonString);
             }
 
         // receivedPayload = msgDecoderSocket.receivePayloadHexString();
