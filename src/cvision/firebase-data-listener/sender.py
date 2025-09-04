@@ -305,7 +305,7 @@ if __name__ == "__main__":
     parser.add_argument("--seed", action="store_true",
                         help="Write one demo BSM and SPaT to Firebase and exit.")
     args, _ = parser.parse_known_args()
-    # args.seed = True
+    args.seed = True
 
     if args.seed:
         seed_test_records(loop = True)
