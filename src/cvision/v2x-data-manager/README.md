@@ -59,14 +59,6 @@ Change this string in BsmManager.py / SPaTManager.py if you’re targeting a dif
 
 ---
 
-## Installation
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install firebase-admin
-```
----
-
 ## Acknowledgments
 
 Developed within the Transportation & Power Systems context; thanks to contributors maintaining the V2X pipelines and Firebase infrastructure.
