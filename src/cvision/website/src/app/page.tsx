@@ -14,12 +14,8 @@ import {
   createUserWithEmailAndPassword,
 } from "firebase/auth";
 
-/** <-- NEW: static intersection config lives in a separate file */
-// import { INTERSECTIONS, type StaticIntersectionMap, type StaticPhase } from "@/config/intersections";
-// If your TS config doesn’t support "@/..." aliases, use:
-// import { INTERSECTIONS, type StaticIntersectionMap, type StaticPhase } from "../config/intersections";
+/** <-- static intersection config lives in a separate file */
 import { INTERSECTIONS, type StaticPhase } from "@/config/intersections";
-
 
 /* ==================== MAPBOX ==================== */
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
@@ -169,6 +165,10 @@ export default function Page() {
   const [selectedId, setSelectedId] = useState<string | null>(null); // SPaT selection
   const [selectedVehicleId, setSelectedVehicleId] = useState<string | null>(null); // Vehicle selection
 
+  // Vehicle hover popup + pin state
+  const vehiclePopupRef = useRef<mapboxgl.Popup | null>(null);
+  const [pinnedVehicleId, setPinnedVehicleId] = useState<string | null>(null);
+
   /* ==== Auth watcher ==== */
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -191,7 +191,7 @@ export default function Page() {
   /* ==== Force default map style after sign-in/approval */
   useEffect(() => {
     if (authed === true && approved !== false) {
-      setMapStyle("streets");   // ensure default
+      setMapStyle("streets"); // ensure default
     }
   }, [authed, approved]);
 
@@ -213,13 +213,40 @@ export default function Page() {
 
     mapRef.current.addControl(new mapboxgl.NavigationControl(), "top-right");
 
+    // init reusable vehicle popup for current map instance
+    vehiclePopupRef.current = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: 12 });
+
+    // z-index safety
+    if (!document.getElementById("mapbox-z-fix")) {
+      const s = document.createElement("style");
+      s.id = "mapbox-z-fix";
+      s.textContent = `.mapboxgl-marker{z-index:2}.mapboxgl-popup{z-index:3}`;
+      document.head.appendChild(s);
+    }
+
     mapRef.current.on("error", (e: unknown) => console.error("Mapbox error:", e));
 
     return () => {
+      vehiclePopupRef.current?.remove();
+      vehiclePopupRef.current = null;
       mapRef.current?.remove();
       mapRef.current = null;
     };
   }, [authed, approved, mapStyle]);
+
+  /* ==== Rebuild markers & popup when style switches ==== */
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    // Remove old vehicle markers so they get recreated with fresh handlers
+    Object.values(vehicleMarkersRef.current).forEach((m) => m.remove());
+    vehicleMarkersRef.current = {};
+
+    // Reset popup and pin
+    vehiclePopupRef.current?.remove();
+    vehiclePopupRef.current = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: 12 });
+    setPinnedVehicleId(null);
+  }, [mapStyle]);
 
   /* ==== Vehicles (/vehicle_status) ==== */
   useEffect(() => {
@@ -227,7 +254,35 @@ export default function Page() {
     const ref = dbRef(db, "vehicle_status");
     const unsub = onValue(ref, (snap) => {
       const val = snap.val() || {};
-      const list: Vehicle[] = Object.keys(val).map((key) => ({ ...val[key], id: String(key) }));
+
+      const list: Vehicle[] = Object.keys(val).map((key) => {
+        const raw = val[key] ?? {};
+        const lat = Number(raw.lat ?? raw.latitude);
+        const lon = Number(raw.lon ?? raw.longitude);
+
+        // Normalize speed → m/s
+        let speed_mps: number | undefined = undefined;
+        if (raw.speed_mps != null) speed_mps = Number(raw.speed_mps);
+        else if (raw.speed != null) speed_mps = Number(raw.speed); // db uses `speed`
+        else if (raw.speed_mph != null) speed_mps = Number(raw.speed_mph) / 2.23693629;
+
+        // Normalize heading → degrees
+        const heading_deg =
+          raw.heading_deg != null ? Number(raw.heading_deg) : raw.heading != null ? Number(raw.heading) : undefined;
+
+        // Normalize timestamp
+        const ts = raw.ts != null ? Number(raw.ts) : raw.timestamp != null ? Number(raw.timestamp) : undefined;
+
+        return {
+          id: String(key),
+          lat,
+          lon,
+          speed_mps,
+          heading_deg,
+          ts,
+        } as Vehicle;
+      });
+
       setVehicles(list);
 
       const map = mapRef.current;
@@ -253,14 +308,14 @@ export default function Page() {
       const liveById: Record<string, { phaseStates?: PhaseStateRaw[]; timestamp?: number }> = {};
 
       if (Array.isArray(root?.SPaTInfo)) {
-        // --- legacy array shape ---
+        // legacy array shape
         (root.SPaTInfo as SpatItemRaw[]).forEach((r) => {
           const id = r.IntersectionID != null ? String(r.IntersectionID) : "";
           if (!id) return;
           liveById[id] = { phaseStates: r.phaseStates || [], timestamp: r.timestamp };
         });
       } else if (root && typeof root === "object") {
-        // --- new keyed shape: /spat/<id>/{phaseStates, timestamp} ---
+        // new keyed shape: /spat/<id>/{phaseStates, timestamp}
         Object.keys(root).forEach((id) => {
           const node = root[id];
           if (node && typeof node === "object" && Array.isArray(node.phaseStates)) {
@@ -272,7 +327,6 @@ export default function Page() {
         });
       }
 
-      // Drive UI from static INTERSECTIONS + merge live by phase
       const list: Spat[] = Object.keys(INTERSECTIONS).map((id) => {
         const base = INTERSECTIONS[id];
         const live = liveById[id];
@@ -288,10 +342,8 @@ export default function Page() {
 
       setSpats(list);
 
-      // Default selection + camera fly
       if (!selectedId && list.length) setSelectedId(list[0].intersection_id);
-      const active =
-        list.find((s) => s.intersection_id === (selectedId ?? list[0]?.intersection_id)) || list[0];
+      const active = list.find((s) => s.intersection_id === (selectedId ?? list[0]?.intersection_id)) || list[0];
       const map = mapRef.current;
       if (active && map && typeof active.lon === "number" && typeof active.lat === "number") {
         map.flyTo({ center: [active.lon, active.lat], zoom: 17 });
@@ -301,12 +353,40 @@ export default function Page() {
     return () => unsub();
   }, [db, authed, approved, selectedId]);
 
-  /* ==== Vehicle markers (colored, pulsing) ==== */
+  /* ==== Vehicle markers (colored, pulsing) + HOVER POPUPS ==== */
   useEffect(() => {
     const map = mapRef.current;
     if (!map || authed !== true || approved === false) return;
 
     const cache = vehicleMarkersRef.current;
+
+    // helper: render HTML for popup
+    const htmlFor = (el: HTMLDivElement) => {
+      const id = el.dataset.vehicleId || "";
+      const lat = Number(el.dataset.lat ?? "");
+      const lon = Number(el.dataset.lon ?? "");
+      const speedMps = Number(el.dataset.speedMps ?? "");
+      const heading = el.dataset.headingDeg ? Math.round(Number(el.dataset.headingDeg)) : undefined;
+      const ts = el.dataset.ts ? Number(el.dataset.ts) : undefined;
+      const mph = isFinite(speedMps) ? speedMps * 2.23693629 : undefined;
+      return `
+        <div class="text-sm">
+          <div><strong>Vehicle:</strong> ${id}</div>
+          <div><strong>GPS:</strong> ${lat.toFixed(6)}, ${lon.toFixed(6)}</div>
+          ${isFinite(speedMps) ? `<div><strong>Speed:</strong> ${speedMps.toFixed(1)} m/s (${mph!.toFixed(1)} mph)</div>` : ""}
+          ${heading !== undefined ? `<div><strong>Heading:</strong> ${heading}°</div>` : ""}
+          ${ts ? `<div><strong>Time:</strong> ${new Date(ts).toLocaleString()}</div>` : ""}
+        </div>`;
+    };
+
+    const showPopup = (el: HTMLDivElement) => {
+      const popup = vehiclePopupRef.current;
+      if (!popup) return;
+      const lon = Number(el.dataset.lon ?? "");
+      const lat = Number(el.dataset.lat ?? "");
+      if (!isFinite(lon) || !isFinite(lat)) return;
+      popup.setLngLat([lon, lat]).setHTML(htmlFor(el)).addTo(map);
+    };
 
     vehicles.forEach((v) => {
       if (typeof v.lon !== "number" || typeof v.lat !== "number") return;
@@ -324,7 +404,7 @@ export default function Page() {
         div.style.background = core;
         div.style.border = "2px solid white";
         div.style.boxShadow = "0 0 6px rgba(0,0,0,0.5)";
-        div.style.pointerEvents = "none";
+        div.style.pointerEvents = "auto"; // allow hover/click
         // arrow (heading triangle)
         const arrow = document.createElement("div");
         arrow.style.position = "absolute";
@@ -361,6 +441,25 @@ export default function Page() {
 
         marker = new mapboxgl.Marker({ element: div, anchor: "center" });
         cache[v.id] = marker;
+
+        // hover + click handlers (once per marker)
+        div.addEventListener("mouseenter", () => {
+          if (pinnedVehicleId && pinnedVehicleId !== v.id) return; // don't override a pinned popup for another vehicle
+          showPopup(div);
+        });
+        div.addEventListener("mouseleave", () => {
+          if (pinnedVehicleId === v.id) return; // keep if pinned
+          vehiclePopupRef.current?.remove();
+        });
+        div.addEventListener("click", () => {
+          if (pinnedVehicleId === v.id) {
+            setPinnedVehicleId(null);
+            vehiclePopupRef.current?.remove();
+          } else {
+            setPinnedVehicleId(v.id);
+            showPopup(div);
+          }
+        });
       } else {
         // update colors on existing element for consistency
         const el = marker.getElement() as HTMLDivElement;
@@ -371,8 +470,19 @@ export default function Page() {
         if (pulse) pulse.style.background = ring;
       }
 
-      // emphasize selected vehicle
+      // update data-* for popup to always show latest values
       const el = marker.getElement() as HTMLDivElement;
+      el.dataset.vehicleId = v.id;
+      el.dataset.lat = String(v.lat);
+      el.dataset.lon = String(v.lon);
+      if (typeof v.speed_mps === "number") el.dataset.speedMps = String(v.speed_mps);
+      else delete el.dataset.speedMps;
+      if (typeof v.heading_deg === "number") el.dataset.headingDeg = String(v.heading_deg);
+      else delete el.dataset.headingDeg;
+      if (typeof v.ts === "number") el.dataset.ts = String(v.ts);
+      else delete el.dataset.ts;
+
+      // emphasize selected vehicle
       el.style.outline = selectedVehicleId === v.id ? `2px solid ${ring}` : "none";
       el.style.outlineOffset = selectedVehicleId === v.id ? "2px" : "0";
 
@@ -380,16 +490,25 @@ export default function Page() {
       el.style.transform = typeof v.heading_deg === "number" ? `rotate(${v.heading_deg}deg)` : "";
 
       marker.setLngLat([v.lon, v.lat]).addTo(map);
+
+      // keep pinned popup updated in-place
+      if (pinnedVehicleId === v.id) {
+        showPopup(el);
+      }
     });
 
     // prune
     Object.keys(cache).forEach((id) => {
       if (!vehicles.some((v) => String(v.id) === String(id))) {
+        if (pinnedVehicleId === id) {
+          setPinnedVehicleId(null);
+          vehiclePopupRef.current?.remove();
+        }
         cache[id].remove();
         delete cache[id];
       }
     });
-  }, [vehicles, authed, approved, mapStyle, selectedVehicleId]);
+  }, [vehicles, authed, approved, mapStyle, selectedVehicleId, pinnedVehicleId]);
 
   /* ==== SPaT markers (traffic-light icons) ==== */
   useEffect(() => {
