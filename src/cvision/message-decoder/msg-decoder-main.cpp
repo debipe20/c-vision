@@ -1,7 +1,24 @@
+/*
+**********************************************************************************
+msg-decoder-main.cpp
+Created by: Debashis Das
+Argonne National Laboratory
+Transportation and Power Systems Division
+
+**********************************************************************************
+
+Description:
+------------
+
+**********************************************************************************
+*/
+#pragma once
 #include "MsgDecoder.h"
 #include <UdpSocket.h>
 #include "geoUtils.h"
 #include "msgEnum.h"
+#include "MapManager.h"
+#include "VehicleServer.h"
 #include <algorithm>
 #include <cstdlib>
 
@@ -29,9 +46,9 @@ int main() {
     UdpSocket msgDecoderSocket(static_cast<short unsigned int>(jsonObject["PortNumber"]["V2XDataReceiver"].asInt()));
     const int v2xDataManagerPort = static_cast<short unsigned int>(jsonObject["PortNumber"]["V2XDataManager"].asInt());
     
+    MapManager mapManager;
+
     char receiveBuffer[2048];
-    // string receivedPayload{};
-    // string extractedPayload{};
     int msgType{};
     string sendingJsonString{};
 
@@ -48,6 +65,8 @@ int main() {
             if (msgType == MsgEnum::DSRCmsgID_map)
             {
                 cout << "Received MAP" <<endl;
+                mapManager.json2MapPayload(receivedJsonString);
+                mapManager.maintainAvailableMapList();
             }
 
             else if (msgType == MsgEnum::DSRCmsgID_bsm)

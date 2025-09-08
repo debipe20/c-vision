@@ -9,7 +9,7 @@ INCLUDES    := -I$(J2735_INCL) -I$(JSONCPP_INCL) -I$(COMMON_INCL) -I$(BUILD_ROOT
 LIBS        := -L$(J2735_LIB) -L$(MMITSS_COMMON_LIB) -L$(MAPENGINE_LIB) -llocAware -ldsrc -lasn -lmmitss-common #tell the linker where to find the libraries
 
 #cpp's go here
-SRC += msg-decoder-main.cpp  MsgDecoder.cpp 
+SRC += msg-decoder-main.cpp  MsgDecoder.cpp VehicleServer.cpp
 #the name of the executable goes here
 TARGET = M_V2XDataDecoder
 
