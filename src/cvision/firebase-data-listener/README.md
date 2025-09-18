@@ -40,7 +40,7 @@ Example:
   },
   "PortNumber": {
     "V2XDataSender": 5002,
-    "V2XDataReceiver": 5005
+    "MessageDecoder": 5005
   }
 }
 ```

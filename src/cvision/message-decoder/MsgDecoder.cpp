@@ -58,23 +58,23 @@ int MsgDecoder::getMessageType(string payload)
 
 string MsgDecoder::mapDecoder(string mapPayload)
 {
-    std::ofstream outputfile;
+    ofstream outputfile;
     string fmap{};
     string intersection_Name{};
     string mapName{};
     int intersectionID{};
-    bool singleFrame{false};
+    bool singleFrame = false;
     string deleteFileName = "Map.map.payload";
     string jsonString{};
 
-    // Json::Value jsonObject_config;
-    // std::ifstream configJson("/nojournal/bin/mmitss-phase3-master-config.json");
-    // string configJsonString((std::istreambuf_iterator<char>(configJson)), std::istreambuf_iterator<char>());
-    // Json::CharReaderBuilder builder;
-    // Json::CharReader * reader = builder.newCharReader();
-    // string errors{};
-    // reader->parse(configJsonString.c_str(), configJsonString.c_str() + configJsonString.size(), &jsonObject_config, &errors);        
-    // delete reader;
+    Json::Value jsonObject_config;
+    std::ifstream configJson("/nojournal/bin/mmitss-phase3-master-config.json");
+    string configJsonString((std::istreambuf_iterator<char>(configJson)), std::istreambuf_iterator<char>());
+    Json::CharReaderBuilder builder;
+    Json::CharReader * reader = builder.newCharReader();
+    string errors{};
+    reader->parse(configJsonString.c_str(), configJsonString.c_str() + configJsonString.size(), &jsonObject_config, &errors);        
+    delete reader;
 
     Json::Value jsonObject;
 	Json::StreamWriterBuilder writeBuilder;

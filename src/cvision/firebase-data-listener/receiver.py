@@ -38,7 +38,7 @@ config_file.close()
 
 
 host_ip = config["IPAddress"]["HostIp"]
-port = config["PortNumber"]["V2XDataReceiver"]
+port = config["PortNumber"]["MessageDecoder"]
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind((host_ip, port))

@@ -63,7 +63,7 @@ try {
 }
 
 const host_ip = config?.IPAddress?.HostIp;
-const receiver_port = config?.PortNumber?.V2XDataReceiver;
+const receiver_port = config?.PortNumber?.MessageDecoder;
 
 // Listen to unified /LatestV2XMessage
 const ref = db.ref('/LatestV2XMessage');

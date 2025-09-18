@@ -13,12 +13,40 @@ Description:
 **********************************************************************************
 */
 #include "VehicleServer.h"
-#include <algorithm>
 
 const double TIME_GAP_BETWEEN_RECEIVING_BSM = 10;
 
 VehicleServer::VehicleServer()
 {
+}
+
+int VehicleServer::getMessageType(string jsonString)
+{
+    int messageType{};
+    double timeStamp = getPosixTimestamp();
+    Json::Value jsonObject;
+    Json::CharReaderBuilder builder;
+    Json::CharReader *reader = builder.newCharReader();
+    std::string errors{};
+    bool parsingSuccessful = reader->parse(jsonString.c_str(), jsonString.c_str() + jsonString.size(), &jsonObject, &errors);
+    delete reader;
+
+    if (parsingSuccessful)
+    {
+        if ((jsonObject["MsgType"]).asString() == "MAP")
+            messageType = MsgEnum::DSRCmsgID_map;
+
+        else if ((jsonObject["MsgType"]).asString() == "BSM")
+            messageType = MsgEnum::DSRCmsgID_bsm;
+
+        else if ((jsonObject["MsgType"]).asString() == "SSM")
+            messageType = MsgEnum::DSRCmsgID_ssm;
+
+        else
+            cout << "[" << fixed << showpoint << setprecision(4) << timeStamp << "] Message type is unknown" << std::endl;
+    }
+
+    return messageType;
 }
 
 /*
@@ -61,10 +89,13 @@ void VehicleServer::processBSM(BasicVehicle basicVehicle)
     int vehicleID{};
 
     vehicleID = basicVehicle.getTemporaryID();
+    managingVehicleServerList(basicVehicle);
 
     vector<ServerList>::iterator findVehicleIDInList = std::find_if(std::begin(VehicleServerList), std::end(VehicleServerList),
                                                                         [&](ServerList const &p)
                                                                         { return p.vehicleID == vehicleID; });
+    
+    findVehicleIDInList->vehicleStatusManager.getVehicleInformationFromMAP(findVehicleIDInList->mapManager, basicVehicle);
 
 }
 

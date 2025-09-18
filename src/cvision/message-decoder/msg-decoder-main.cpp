@@ -12,13 +12,11 @@ Description:
 
 **********************************************************************************
 */
-#pragma once
+
 #include "MsgDecoder.h"
 #include <UdpSocket.h>
 #include "geoUtils.h"
 #include "msgEnum.h"
-#include "MapManager.h"
-#include "VehicleServer.h"
 #include <algorithm>
 #include <cstdlib>
 
@@ -43,14 +41,13 @@ int main() {
 
     MsgDecoder msgDecoder;
     const string HostIP = jsonObject["IPAddress"]["HostIp"].asString();
-    UdpSocket msgDecoderSocket(static_cast<short unsigned int>(jsonObject["PortNumber"]["V2XDataReceiver"].asInt()));
+    UdpSocket msgDecoderSocket(static_cast<short unsigned int>(jsonObject["PortNumber"]["MessageDecoder"].asInt()));
     const int v2xDataManagerPort = static_cast<short unsigned int>(jsonObject["PortNumber"]["V2XDataManager"].asInt());
-    
-    MapManager mapManager;
-
+    const int mapReceiverPortNo = static_cast<short unsigned int>(jsonObject["PortNumber"]["VehicleServer"].asInt());
     char receiveBuffer[2048];
     int msgType{};
     string sendingJsonString{};
+    double currentTime{};
 
     while (true)
     {
@@ -59,26 +56,28 @@ int main() {
         cout << "Received following payload \n" << receivedPayload << endl;
         size_t pos = receivedPayload.find("001");
         receivedPayload = receivedPayload.erase(0,pos);
-        
+        currentTime = static_cast<double>(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
         msgType = msgDecoder.getMessageType(receivedPayload);
 
             if (msgType == MsgEnum::DSRCmsgID_map)
             {
-                cout << "Received MAP" <<endl;
-                mapManager.json2MapPayload(receivedJsonString);
-                mapManager.maintainAvailableMapList();
+                cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Received MAP" <<endl;
+                
+                sendingJsonString = msgDecoder.mapDecoder(receivedPayload);
+                msgDecoderSocket.sendData(HostIP, static_cast<short unsigned int>(mapReceiverPortNo), sendingJsonString);
+                cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Decoded MAP" << endl;
             }
 
             else if (msgType == MsgEnum::DSRCmsgID_bsm)
             {
-                cout << "Received BSM" <<endl;
+                cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Received BSM" <<endl;
                 sendingJsonString = msgDecoder.bsmDecoder(receivedPayload);
                 msgDecoderSocket.sendData(HostIP, static_cast<short unsigned int>(v2xDataManagerPort), sendingJsonString);
             }
 
             else if (msgType == MsgEnum::DSRCmsgID_spat)
             {
-                cout << "Received SPaT" <<endl;
+                cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Received SPaT" <<endl;
                 sendingJsonString = msgDecoder.spatDecoder(receivedPayload);
                 msgDecoderSocket.sendData(HostIP, static_cast<short unsigned int>(v2xDataManagerPort), sendingJsonString);
             }

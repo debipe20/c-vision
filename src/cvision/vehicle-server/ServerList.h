@@ -1,5 +1,9 @@
 #pragma once
 #include "VehicleServer.h"
+#include "VehicleStatusManager.h"
+#include "MapManager.h" 
+
+
 using std::string;
 
 struct ServerList
@@ -13,6 +17,8 @@ struct ServerList
     int vehicleLaneID{};
     int vehicleApproachID{};
     int vehicleSignalGroup{};
+    VehicleStatusManager vehicleStatusManager;
+    MapManager mapManager;
 
     void reset()
     {
