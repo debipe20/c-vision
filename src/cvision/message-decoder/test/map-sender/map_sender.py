@@ -22,16 +22,17 @@ config = json.load(config_file)
 config_file.close()
 
 hostIp = config["IPAddress"]["HostIp"]
-port = config["PortNumber"]["V2XDataSender"]
-msg_sender_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-msg_sender_socket.bind((hostIp,port))
+# port = config["PortNumber"]["V2XDataSender"]
+port = 5001
+map_sender_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+map_sender_socket.bind((hostIp,port))
 
 msg_decoder_port = config["PortNumber"]["MessageDecoder"]
 client_info = (hostIp, msg_decoder_port)
 
-file_name = "bsm-hex.txt"
+file_name = "map-hex.txt"
 file = open(file_name, "r")
-send_period = 0.1  # 10 Hz
+send_period = 1.0  # 1 Hz
 next_time = time.perf_counter()
 
 try:
@@ -54,11 +55,11 @@ try:
                 time.sleep(sleep_s)
             next_time += send_period
 
-            msg_sender_socket.sendto(payload,client_info)
+            map_sender_socket.sendto(payload,client_info)
             print(f"sent payload at time {time.time():.6f}")
 
 except KeyboardInterrupt:
     print("\nStopped by user.")
     
 finally:
-    msg_sender_socket.close()
+    map_sender_socket.close()

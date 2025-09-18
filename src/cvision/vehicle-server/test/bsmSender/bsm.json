@@ -1,0 +1,21 @@
+{
+    "MsgType": "BSM",
+    "BasicVehicle": {
+        "heading_Degree": 359.0,
+        "position": {
+            "elevation_Meter": 227.90000000000001,
+            "latitude_DecimalDegree": 41.704095600000002,
+            "longitude_DecimalDegree": -87.991884099999993
+        },
+        "secMark_Second": 7.0,
+        "size": {
+            "length_cm": 600,
+            "width_cm": 230
+        },
+        "speed_MeterPerSecond": 3.0,
+        "temporaryID": 642781926,
+        "type": "0"
+    },
+    "Timestamp_posix": 1758223899.2843671,
+    "Timestamp_verbose": "2025-09-18 19:31:39.284"
+}

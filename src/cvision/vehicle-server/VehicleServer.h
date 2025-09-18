@@ -50,12 +50,15 @@ public:
     int getMessageType(string jsonString);
     void managingVehicleServerList(BasicVehicle basicVehicle);
     void processBSM(BasicVehicle basicVehicle);
+    void processMap(string jsonString, MapManager mapManager);
+    void deleteTimedOutVehicleInformationFromVehicleServerList();
     bool checkAddVehicleIDToVehicleServerList(int vehicleID);
     bool checkUpdateVehicleIDInVehicleServerList(int vehicleID);
     bool checkDeleteTimedOutVehicleIDFromList();
-    
+    double haversineDistance(double lat1, double lon1, double lat2, double lon2);
     void setTimedOutVehicleID(int vehicleID);
     int getTimedOutVehicleID();
     double getCurrentTimeInSeconds();
+    void printVehicleServerList();
 };
 

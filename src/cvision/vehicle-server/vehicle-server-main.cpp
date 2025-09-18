@@ -38,6 +38,7 @@ int main()
 
     VehicleServer vehicleServer;
     BasicVehicle basicVehicle;
+    MapManager mapManager;
     const string HostIP = jsonObject["IPAddress"]["HostIp"].asString();
     UdpSocket vehicleServerSocket(static_cast<short unsigned int>(jsonObject["PortNumber"]["VehicleServer"].asInt()));
     // const int v2xDataManagerPort = static_cast<short unsigned int>(jsonObject["PortNumber"]["V2XDataManager"].asInt());
@@ -52,34 +53,31 @@ int main()
         vehicleServerSocket.receiveData(receiveBuffer, sizeof(receiveBuffer));
         string receivedJsonString(receiveBuffer);
         currentTime = static_cast<double>(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
-        
+
         msgType = vehicleServer.getMessageType(receivedJsonString);
 
         if (msgType == MsgEnum::DSRCmsgID_bsm)
         {
-            cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Received BSM" << endl;
+            cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Received BSM Json String" << endl;
             basicVehicle.json2BasicVehicle(receivedJsonString);
             vehicleServer.processBSM(basicVehicle);
+            vehicleServer.printVehicleServerList();
             // vehicleServerSocket.sendData(HostIP, static_cast<short unsigned int>(v2xDataManagerPort), sendingJsonString);
+            vehicleServer.deleteTimedOutVehicleInformationFromVehicleServerList();
         }
 
-    //     if (msgType == MsgEnum::DSRCmsgID_map)
-    //     {
-    //         cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Received MAP" << endl;
+        else if (msgType == MsgEnum::DSRCmsgID_map)
+        {
+            cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Received MAP Json String" <<endl;
+            vehicleServer.processMap(receivedJsonString, mapManager);
+        }
 
-    //         sendingJsonString = msgDecoder.mapDecoder(receivedPayload);
-    //         vehicleServerSocket.sendData(HostIP, static_cast<short unsigned int>(mapReceiverPortNo), sendingJsonString);
-    //         cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Decoded MAP" << endl;
-    //     }
-
-    
-
-    //     else if (msgType == MsgEnum::DSRCmsgID_spat)
-    //     {
-    //         cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Received SPaT" << endl;
-    //         sendingJsonString = msgDecoder.spatDecoder(receivedPayload);
-    //         vehicleServerSocket.sendData(HostIP, static_cast<short unsigned int>(v2xDataManagerPort), sendingJsonString);
-    //     }
+        //     else if (msgType == MsgEnum::DSRCmsgID_spat)
+        //     {
+        //         cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Received SPaT" << endl;
+        //         sendingJsonString = msgDecoder.spatDecoder(receivedPayload);
+        //         vehicleServerSocket.sendData(HostIP, static_cast<short unsigned int>(v2xDataManagerPort), sendingJsonString);
+        //     }
     }
 
     return 0;

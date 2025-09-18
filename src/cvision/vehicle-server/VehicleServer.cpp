@@ -15,6 +15,7 @@ Description:
 #include "VehicleServer.h"
 
 const double TIME_GAP_BETWEEN_RECEIVING_BSM = 10;
+const double DSRC_RANGE = 800.0;
 
 VehicleServer::VehicleServer()
 {
@@ -81,7 +82,6 @@ void VehicleServer::managingVehicleServerList(BasicVehicle basicVehicle)
         findVehicleIDInList->vehicleLongitude = basicVehicle.getLongitude_DecimalDegree();
         findVehicleIDInList->vehicleElevation = basicVehicle.getElevation_Meter();
     }
-
 }
 
 void VehicleServer::processBSM(BasicVehicle basicVehicle)
@@ -92,17 +92,88 @@ void VehicleServer::processBSM(BasicVehicle basicVehicle)
     managingVehicleServerList(basicVehicle);
 
     vector<ServerList>::iterator findVehicleIDInList = std::find_if(std::begin(VehicleServerList), std::end(VehicleServerList),
-                                                                        [&](ServerList const &p)
-                                                                        { return p.vehicleID == vehicleID; });
-    
-    findVehicleIDInList->vehicleStatusManager.getVehicleInformationFromMAP(findVehicleIDInList->mapManager, basicVehicle);
+                                                                    [&](ServerList const &p)
+                                                                    { return p.vehicleID == vehicleID; });
 
+    findVehicleIDInList->vehicleStatusManager.getVehicleInformationFromMAP(findVehicleIDInList->mapManager, basicVehicle);
+    findVehicleIDInList->mapManager.updateMapAge();
+    findVehicleIDInList->mapManager.deleteMap();
+    findVehicleIDInList->vehicleStatusManager.manageMapStatusInAvailableMapList(findVehicleIDInList->mapManager);
 }
 
+/*
+    - The following is responsible for processing the received MAP message
+    - The method uses MapManager class to maintain available map list
+*/
+void VehicleServer::processMap(string jsonString, MapManager mapManager)
+{
+    double mapReferenceLatitude{};
+    double mapReferenceLongitude{};
+
+    mapManager.json2MapPayload(jsonString);
+    mapManager.writeMAPPayloadInFile();
+    mapManager.getReferencePoint();
+    mapReferenceLatitude = mapManager.getMapReferenceLatitude();
+    mapReferenceLongitude = mapManager.getMapReferenceLongitude();
+
+    for (size_t i = 0; i < VehicleServerList.size(); i++)
+    {
+        if (haversineDistance(mapReferenceLatitude, mapReferenceLongitude, VehicleServerList[i].vehicleLatitude, VehicleServerList[i].vehicleLongitude) <= DSRC_RANGE)
+        {
+            VehicleServerList[i].mapManager.json2MapPayload(jsonString);
+            VehicleServerList[i].mapManager.maintainAvailableMapList();
+        }
+    }
+}
+
+/*
+    - Method for deleting the timed out vehicle information.
+    - The method will find the vehicle information object in Vehicle Server list for timed out vehicle ID and delete that object.
+*/
+void VehicleServer::deleteTimedOutVehicleInformationFromVehicleServerList()
+{
+    int veheicleID{};
+    if (checkDeleteTimedOutVehicleIDFromList())
+    {
+        veheicleID = getTimedOutVehicleID();
+        vector<ServerList>::iterator findVehicleIDInList = std::find_if(std::begin(VehicleServerList), std::end(VehicleServerList),
+                                                                        [&](ServerList const &p)
+                                                                        { return p.vehicleID == veheicleID; });
+
+        if (findVehicleIDInList != VehicleServerList.end())
+            VehicleServerList.erase(findVehicleIDInList);
+    }
+}
+
+/*
+    - Method for computing haversine distance between two gps coordinates
+*/
+double VehicleServer::haversineDistance(double lat1, double lon1, double lat2, double lon2)
+{
+    double lattitudeDifference{};
+    double longitudeDifference{};
+    double rad{6371};
+    double distance{};
+    double intermediateCalculation{};
+
+    lattitudeDifference = (lat2 - lat1) * M_PI / 180.0;
+    longitudeDifference = (lon2 - lon1) * M_PI / 180.0;
+
+    // convert to radians
+    lat1 = (lat1)*M_PI / 180.0;
+    lat2 = (lat2)*M_PI / 180.0;
+
+    // apply formula
+    intermediateCalculation = pow(sin(lattitudeDifference / 2), 2) + pow(sin(longitudeDifference / 2), 2) * cos(lat1) * cos(lat2);
+
+    distance = 2 * rad * asin(sqrt(intermediateCalculation)) * 1000.0;
+
+    return distance;
+}
 
 /*
     - The following boolean method will determine whether the received vehicle information is required to add in the VehicleServer List
-    - If vehicle ID is not present in the VehicleServer list the method will return true. 
+    - If vehicle ID is not present in the VehicleServer list the method will return true.
 */
 bool VehicleServer::checkAddVehicleIDToVehicleServerList(int vehicleID)
 {
@@ -147,7 +218,7 @@ bool VehicleServer::checkUpdateVehicleIDInVehicleServerList(int vehicleID)
 
 /*
     - The following boolean method will determine whether vehicle information is required to delete from the VehicleServer List
-    - If there BSM is not received from a vehicle for more than predifined time(10sec),the method will return true.
+    - If there BSM is not received from a vehicle for more than predefined time(10sec),the method will return true.
     - The method will set the timed out vehicle ID
 */
 bool VehicleServer::checkDeleteTimedOutVehicleIDFromList()
@@ -169,7 +240,6 @@ bool VehicleServer::checkDeleteTimedOutVehicleIDFromList()
 
     return deleteVehicleInfo;
 }
-
 
 /*
     - Setter for timed out vehicle
@@ -197,8 +267,25 @@ double VehicleServer::getCurrentTimeInSeconds()
     return currentTime;
 }
 
+/*
+    - Method for printing the Vehicle server list
+*/
+void VehicleServer::printVehicleServerList()
+{
+    double timeStamp = getPosixTimestamp();
+    
+    if (!VehicleServerList.empty())
+    {
+        cout << "Vehicle ID" << " " << "Lane ID" << " " << "Signal Group" << " " << "Update Time" << endl;
+
+        for (size_t i = 0; i < VehicleServerList.size(); i++)
+            cout << VehicleServerList[i].vehicleID << " " << VehicleServerList[i].vehicleLaneID << " " << VehicleServerList[i].vehicleSignalGroup << " " << VehicleServerList[i].updateTime << endl;
+    }
+    
+    else
+        cout << "[" << fixed << showpoint << setprecision(2) << timeStamp << "] Vehicle Server Lists is empty" << endl;
+}
+
 VehicleServer::~VehicleServer()
 {
 }
-
-

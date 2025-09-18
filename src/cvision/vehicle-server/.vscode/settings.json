@@ -1,5 +1,6 @@
 {
     "files.associations": {
+        "*.config": "shellscript",
         "array": "cpp",
         "atomic": "cpp",
         "bit": "cpp",
@@ -45,6 +46,19 @@
         "stdexcept": "cpp",
         "streambuf": "cpp",
         "typeinfo": "cpp",
-        "chrono": "cpp"
-    }
+        "chrono": "cpp",
+        "bitset": "cpp"
+    },
+    "python.autoComplete.extraPaths": [
+        "/home/carma/catkin_ws/devel/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages",
+        "/home/carma/carla/CARLA_0.9.10_TFHRC_Ubuntu_20220301/LinuxNoEditor/PythonAPI/carla/dist/carla-0.9.10-py3.8-linux-x86_64.egg",
+        "/home/carma/Desktop/deb-anl-xil/3rdparty/objective-systems/v2x_api_76201_lb/python/src"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/carma/catkin_ws/devel/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages",
+        "/home/carma/carla/CARLA_0.9.10_TFHRC_Ubuntu_20220301/LinuxNoEditor/PythonAPI/carla/dist/carla-0.9.10-py3.8-linux-x86_64.egg",
+        "/home/carma/Desktop/deb-anl-xil/3rdparty/objective-systems/v2x_api_76201_lb/python/src"
+    ]
 }

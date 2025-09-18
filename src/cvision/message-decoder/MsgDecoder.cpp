@@ -104,6 +104,9 @@ string MsgDecoder::mapDecoder(string mapPayload)
     remove(deleteFileName.c_str());
     delete plocAwareLib;
 
+    // double currentTime = static_cast<double>(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+    // cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Decoded MAP Json is following: \n" << jsonString << endl;
+    
     return jsonString;
 }
 
@@ -196,7 +199,10 @@ string MsgDecoder::spatDecoder(string spatPayload)
 
         jsonString = Json::writeString(builder, jsonObject);
     }
-    cout << jsonString << endl;
+
+    double currentTime = static_cast<double>(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+    cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Decoded SPaT Json is following: \n" << jsonString << endl;
+    
     return jsonString;
 }
 
@@ -245,7 +251,8 @@ string MsgDecoder::bsmDecoder(string bsmPayload)
         jsonString = basicVehicle.basicVehicle2Json();
     }
     
-    cout << jsonString << endl;
+    double currentTime = static_cast<double>(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+    cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Decoded BSM Json is following: \n" << jsonString << endl;
     return jsonString;
 }
 
