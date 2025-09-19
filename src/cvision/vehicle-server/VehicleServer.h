@@ -19,6 +19,7 @@ Description:
 #include <chrono>
 #include <fstream>
 #include <algorithm>
+#include <sstream>
 #include "ServerList.h"
 #include "BasicVehicle.h"
 #include "json/json.h"
@@ -49,7 +50,7 @@ public:
     ~VehicleServer();
     int getMessageType(string jsonString);
     void managingVehicleServerList(BasicVehicle basicVehicle);
-    void processBSM(BasicVehicle basicVehicle);
+    string processBSM(string jsonString, BasicVehicle basicVehicle);
     void processMap(string jsonString, MapManager mapManager);
     void deleteTimedOutVehicleInformationFromVehicleServerList();
     bool checkAddVehicleIDToVehicleServerList(int vehicleID);
@@ -60,5 +61,6 @@ public:
     int getTimedOutVehicleID();
     double getCurrentTimeInSeconds();
     void printVehicleServerList();
+    string updateBsmJsonString(const string& inJson, int laneID, int approachID, int signalGroup);
 };
 

@@ -41,8 +41,8 @@ int main()
     MapManager mapManager;
     const string HostIP = jsonObject["IPAddress"]["HostIp"].asString();
     UdpSocket vehicleServerSocket(static_cast<short unsigned int>(jsonObject["PortNumber"]["VehicleServer"].asInt()));
-    // const int v2xDataManagerPort = static_cast<short unsigned int>(jsonObject["PortNumber"]["V2XDataManager"].asInt());
-    // const int mapReceiverPortNo = static_cast<short unsigned int>(jsonObject["PortNumber"]["VehicleServer"].asInt());
+    const int v2xDataManagerPort = static_cast<short unsigned int>(jsonObject["PortNumber"]["V2XDataManager"].asInt());
+
     char receiveBuffer[2048];
     int msgType{};
     string sendingJsonString{};
@@ -60,9 +60,9 @@ int main()
         {
             cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Received BSM Json String" << endl;
             basicVehicle.json2BasicVehicle(receivedJsonString);
-            vehicleServer.processBSM(basicVehicle);
+            sendingJsonString = vehicleServer.processBSM(receivedJsonString, basicVehicle);
             vehicleServer.printVehicleServerList();
-            // vehicleServerSocket.sendData(HostIP, static_cast<short unsigned int>(v2xDataManagerPort), sendingJsonString);
+            vehicleServerSocket.sendData(HostIP, static_cast<short unsigned int>(v2xDataManagerPort), sendingJsonString);
             vehicleServer.deleteTimedOutVehicleInformationFromVehicleServerList();
         }
 

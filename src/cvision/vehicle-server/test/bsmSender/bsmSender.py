@@ -7,7 +7,7 @@ import socket, json, time, os, platform, sys
 from itertools import cycle
 
 def main(loop=True):
-    FILENAMES = ["bsm1.json"]
+    FILENAMES = ["bsm.json", "bsm1.json"]
 
     # config (kept as-is)
     current_os = platform.system()
@@ -39,8 +39,10 @@ def main(loop=True):
     next_time = time.perf_counter()
 
     try:
-        it = cycle(FILENAMES) if loop else iter(FILENAMES)
-        for fname in it:
+        # choose iterator: infinite cycle if loop=True, single pass if loop=False
+        file_iter = cycle(FILENAMES) if loop else iter(FILENAMES)
+
+        for fname in file_iter:
             now = time.perf_counter()
             sleep_s = next_time - now
             if sleep_s > 0:
@@ -54,9 +56,6 @@ def main(loop=True):
                 print(f"Sent {fname} at {time.time():.3f}")
             except FileNotFoundError:
                 print(f"[WARN] {fname} not found; skipping.")
-
-            if not loop:
-                break
 
     except KeyboardInterrupt:
         print("Stopping…")

@@ -65,6 +65,7 @@ def main():
                 spatManager.manage_spat_data(receivedMessage)
 
             elif receivedMessage["MsgType"]== "BSM":
+                print("Received BSM")
                 bsmManager.manage_bsm_data(receivedMessage)
 
     except KeyboardInterrupt:

@@ -45,6 +45,7 @@ function useFirebaseAuth() {
 }
 
 /* ==================== TYPES ==================== */
+// ADDED: lane_id / approach_id / signal_group
 type Vehicle = {
   id: string;
   lat: number;
@@ -52,6 +53,9 @@ type Vehicle = {
   speed_mps?: number;
   heading_deg?: number;
   ts?: number;
+  lane_id?: string | number;       // ← added
+  approach_id?: string | number;   // ← added
+  signal_group?: string | number;  // ← added
 };
 
 type PhaseStateRaw = { phase: number; state: string; direction?: string; maneuver?: string };
@@ -273,6 +277,11 @@ export default function Page() {
         // Normalize timestamp
         const ts = raw.ts != null ? Number(raw.ts) : raw.timestamp != null ? Number(raw.timestamp) : undefined;
 
+        // ADDED: lane/approach/signal group (support snake_case and camelCase variants)
+        const lane_id = (raw.lane_id ?? raw.laneId) as string | number | undefined;
+        const approach_id = (raw.approach_id ?? raw.approachId) as string | number | undefined;
+        const signal_group = (raw.signal_group ?? raw.signalGroup ?? raw.signal_group_id ?? raw.signalGroupId) as string | number | undefined;
+
         return {
           id: String(key),
           lat,
@@ -280,6 +289,9 @@ export default function Page() {
           speed_mps,
           heading_deg,
           ts,
+          lane_id,
+          approach_id,
+          signal_group,
         } as Vehicle;
       });
 
@@ -369,12 +381,18 @@ export default function Page() {
       const heading = el.dataset.headingDeg ? Math.round(Number(el.dataset.headingDeg)) : undefined;
       const ts = el.dataset.ts ? Number(el.dataset.ts) : undefined;
       const mph = isFinite(speedMps) ? speedMps * 2.23693629 : undefined;
+      const laneId = el.dataset.laneId;
+      const approachId = el.dataset.approachId;
+      const signalGroup = el.dataset.signalGroup;
       return `
         <div class="text-sm">
           <div><strong>Vehicle:</strong> ${id}</div>
           <div><strong>GPS:</strong> ${lat.toFixed(6)}, ${lon.toFixed(6)}</div>
           ${isFinite(speedMps) ? `<div><strong>Speed:</strong> ${speedMps.toFixed(1)} m/s (${mph!.toFixed(1)} mph)</div>` : ""}
           ${heading !== undefined ? `<div><strong>Heading:</strong> ${heading}°</div>` : ""}
+          ${laneId ? `<div><strong>Lane ID:</strong> ${laneId}</div>` : ""}
+          ${approachId ? `<div><strong>Approach ID:</strong> ${approachId}</div>` : ""}
+          ${signalGroup ? `<div><strong>Signal Group:</strong> ${signalGroup}</div>` : ""}
           ${ts ? `<div><strong>Time:</strong> ${new Date(ts).toLocaleString()}</div>` : ""}
         </div>`;
     };
@@ -481,6 +499,13 @@ export default function Page() {
       else delete el.dataset.headingDeg;
       if (typeof v.ts === "number") el.dataset.ts = String(v.ts);
       else delete el.dataset.ts;
+      // ADDED: bind lane/approach/signal group into dataset
+      if (v.lane_id != null) el.dataset.laneId = String(v.lane_id);
+      else delete el.dataset.laneId;
+      if (v.approach_id != null) el.dataset.approachId = String(v.approach_id);
+      else delete el.dataset.approachId;
+      if (v.signal_group != null) el.dataset.signalGroup = String(v.signal_group);
+      else delete el.dataset.signalGroup;
 
       // emphasize selected vehicle
       el.style.outline = selectedVehicleId === v.id ? `2px solid ${ring}` : "none";

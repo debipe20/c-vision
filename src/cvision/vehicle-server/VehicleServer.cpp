@@ -84,9 +84,13 @@ void VehicleServer::managingVehicleServerList(BasicVehicle basicVehicle)
     }
 }
 
-void VehicleServer::processBSM(BasicVehicle basicVehicle)
+string VehicleServer::processBSM(string jsonString, BasicVehicle basicVehicle)
 {
     int vehicleID{};
+    int laneID{};
+    int approachID{};
+    int signalGroup{};
+    string updatedJsonString{};
 
     vehicleID = basicVehicle.getTemporaryID();
     managingVehicleServerList(basicVehicle);
@@ -99,6 +103,18 @@ void VehicleServer::processBSM(BasicVehicle basicVehicle)
     findVehicleIDInList->mapManager.updateMapAge();
     findVehicleIDInList->mapManager.deleteMap();
     findVehicleIDInList->vehicleStatusManager.manageMapStatusInAvailableMapList(findVehicleIDInList->mapManager);
+    
+    laneID     = findVehicleIDInList->vehicleStatusManager.getLaneID();
+    approachID = findVehicleIDInList->vehicleStatusManager.getApproachID();
+    signalGroup = findVehicleIDInList->vehicleStatusManager.getSignalGroup();
+    
+    findVehicleIDInList->vehicleLaneID = laneID;
+    findVehicleIDInList->vehicleApproachID = approachID;
+    findVehicleIDInList->vehicleSignalGroup = signalGroup;
+
+    updatedJsonString = updateBsmJsonString(jsonString, laneID, approachID, signalGroup);
+
+    return updatedJsonString;
 }
 
 /*
@@ -285,6 +301,40 @@ void VehicleServer::printVehicleServerList()
     else
         cout << "[" << fixed << showpoint << setprecision(2) << timeStamp << "] Vehicle Server Lists is empty" << endl;
 }
+
+
+
+string VehicleServer::updateBsmJsonString(const string& inJson, int laneID, int approachID, int signalGroup) 
+{
+    string updatedJsonString{};
+    Json::CharReaderBuilder rbuilder;
+    rbuilder["collectComments"] = false;
+
+    Json::Value jsonObject;
+    string errs{};
+    std::istringstream iss(inJson);
+
+    if (!Json::parseFromStream(rbuilder, iss, &jsonObject, &errs)) 
+    {
+        throw std::runtime_error("JSON parse error: " + errs);
+    }
+
+    // create path if missing, then set fields
+    jsonObject["BasicVehicle"]["laneID"] = laneID;
+    jsonObject["BasicVehicle"]["approachID"] = approachID;
+    jsonObject["BasicVehicle"]["signalGroup"] = signalGroup;
+
+    Json::StreamWriterBuilder wbuilder;
+    wbuilder["commentStyle"] = "None";
+    wbuilder["indentation"] = "";                  
+    
+    updatedJsonString = Json::writeString(wbuilder, jsonObject);
+
+    cout << "Updated BSM Json String is: \n" << updatedJsonString << endl;
+
+    return updatedJsonString;
+}
+
 
 VehicleServer::~VehicleServer()
 {
