@@ -19,7 +19,9 @@ Run with `--seed` to write one demo BSM and SPaT to Firebase for testing the web
     python3 sender.py --seed
 
 Usage (normal mode):
-    python3 sender.py
+    python3 sender.py (without header, only payload)
+    python3 sender.py --header (with header)
+
 **********************************************************************************
 """
 
@@ -75,7 +77,7 @@ def exit_gracefully(signum, frame):
     sys.exit(0)
 
 
-def main():
+def main(args):
     """
     Main function for the V2X sender.
     """
@@ -110,13 +112,20 @@ def main():
             data, _ = msgReceiverSocket.recvfrom(1024)
             decoded_data = data.decode(errors='ignore')
 
-            prefix_index = decoded_data.find(payload_prefix)
-            if prefix_index == -1:
-                continue
+            # Check if data contains header or just the payload
+            if args.header:
+                # Process with header
+                prefix_index = decoded_data.find(payload_prefix)
+                if prefix_index == -1:
+                    continue  # No Payload prefix found, skip this message
 
-            payload = decoded_data[prefix_index + len(payload_prefix):].strip()
+                payload = decoded_data[prefix_index + len(payload_prefix):].strip()
+                print(f"Received payload (with header): {payload}")
 
-            print(f"Received payload: {payload}")
+            else:
+                # Process without header (only payload)
+                payload = decoded_data.strip()
+                print(f"Received payload (without header): {payload}")
 
             # Detect payload type
             if payload.startswith(map_identifier):
@@ -238,76 +247,14 @@ def seed_test_records(loop: bool = False, period_sec: int = 5) -> None:
     else:
         once()
 
-
-# def seed_test_records():
-  
-    # spat_payload = {
-    #     "SPaTInfo": [
-    #         {
-    #             "IntersectionName": "KearneyRd & WaterTower",
-    #             "IntersectionID": 2351,
-    #             "phaseStates": [
-    #                 {"phase": 2, "state": "permissiveMovementAllowed",
-    #                     "maneuver": "through-right", "direction": "NorthBound"},
-    #                 {"phase": 4, "state": "stopAndRemain",
-    #                     "maneuver": "left-right", "direction": "WestBound"},
-    #                 {"phase": 6, "state": "protectedMovementAllowed",
-    #                     "maneuver": "left-through", "direction": "SouthBound"}
-    #             ],
-    #             "lat": 41.711326,
-    #             "lon": -87.992046,
-    #             "timestamp": time.time()
-    #         },
-    #         {
-    #             "IntersectionName": "KearneyRd & WestgateRd",
-    #             "IntersectionID": 2350,
-    #             "phaseStates": [
-    #                 {"phase": 2, "state": "stopAndRemain",
-    #                     "maneuver": "left-through-right", "direction": "EastBound"},
-    #                 {"phase": 4, "state": "permissiveMovementAllowed",
-    #                     "maneuver": "left-through-right", "direction": "SouthBound"},
-    #                 {"phase": 6, "state": "stopAndRemain",
-    #                     "maneuver": "left-through-right", "direction": "WestBound"},
-    #                 {"phase": 8, "state": "permissiveMovementAllowed",
-    #                     "maneuver": "left-through-right", "direction": "NorthBound"}
-    #             ],
-    #             "lat": 41.715538,
-    #             "lon": -87.992211,
-    #             "timestamp": time.time()
-    #         }
-    #     ]
-    # }
-
-    # # Write to /spat (overwrites existing)
-    # db.reference("spat").set(spat_payload)
-
-    # # Vehicle near Argonne
-    # db.reference("bsm/test-veh-1").set({
-    #     "lat": 41.710676,
-    #     "lon": -87.992046,
-    #     "speed_mps": 11.5,
-    #     "heading_deg": 360,
-    #     "ts": int(time.time() * 1000)
-    # })
-
-    # # Optional: also bump a "latest" node for debugging/visibility
-    # db.reference("LatestV2XMessage").set({
-    #     "type": "SEED",
-    #     "timestamp": datetime.utcnow().isoformat() + "Z",
-    #     "payload": "Seeded SPaTInfo with two intersections."
-    # })
-
-    # print("✅ Seeded SPaTInfo demo at /spat")
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="V2X sender")
-    parser.add_argument("--seed", action="store_true",
-                        help="Write one demo BSM and SPaT to Firebase and exit.")
-    args, _ = parser.parse_known_args()
+    parser.add_argument("--header", action="store_true", help="Specify if data has a header.")
+    parser.add_argument("--seed", action="store_true", help="Write one demo BSM and SPaT to Firebase and exit.")
+    args = parser.parse_args()
     # args.seed = True
 
     if args.seed:
         seed_test_records(loop = True)
     else:
-        main()
+        main(args)
