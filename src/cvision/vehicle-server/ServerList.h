@@ -17,6 +17,7 @@ struct ServerList
     int vehicleLaneID{};
     int vehicleApproachID{};
     int vehicleSignalGroup{};
+    string vehicleSignalStatus{};
     VehicleStatusManager vehicleStatusManager;
     MapManager mapManager;
 
@@ -31,5 +32,6 @@ struct ServerList
         vehicleLaneID = 0;
         vehicleApproachID = 0;
         vehicleSignalGroup = 0;
+        vehicleSignalStatus = "";
     }
 };

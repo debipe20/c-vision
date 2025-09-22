@@ -90,6 +90,7 @@ string VehicleServer::processBSM(string jsonString, BasicVehicle basicVehicle)
     int laneID{};
     int approachID{};
     int signalGroup{};
+    string signalStatus{};
     string updatedJsonString{};
 
     vehicleID = basicVehicle.getTemporaryID();
@@ -104,14 +105,14 @@ string VehicleServer::processBSM(string jsonString, BasicVehicle basicVehicle)
     findVehicleIDInList->mapManager.deleteMap();
     findVehicleIDInList->vehicleStatusManager.manageMapStatusInAvailableMapList(findVehicleIDInList->mapManager);
     
-    laneID     = findVehicleIDInList->vehicleStatusManager.getLaneID();
+    laneID = findVehicleIDInList->vehicleStatusManager.getLaneID();
     approachID = findVehicleIDInList->vehicleStatusManager.getApproachID();
     signalGroup = findVehicleIDInList->vehicleStatusManager.getSignalGroup();
     
     findVehicleIDInList->vehicleLaneID = laneID;
     findVehicleIDInList->vehicleApproachID = approachID;
     findVehicleIDInList->vehicleSignalGroup = signalGroup;
-
+    findVehicleIDInList->vehicleSignalStatus = signalStatus;
     updatedJsonString = updateBsmJsonString(jsonString, laneID, approachID, signalGroup);
 
     return updatedJsonString;
@@ -304,7 +305,7 @@ void VehicleServer::printVehicleServerList()
 
 
 
-string VehicleServer::updateBsmJsonString(const string& inJson, int laneID, int approachID, int signalGroup) 
+string VehicleServer::updateBsmJsonString(const string& inJson, int laneID, int approachID, int signalGroup, string signalStatus) 
 {
     string updatedJsonString{};
     Json::CharReaderBuilder rbuilder;
@@ -323,6 +324,7 @@ string VehicleServer::updateBsmJsonString(const string& inJson, int laneID, int 
     jsonObject["BasicVehicle"]["laneID"] = laneID;
     jsonObject["BasicVehicle"]["approachID"] = approachID;
     jsonObject["BasicVehicle"]["signalGroup"] = signalGroup;
+    jsonObject["BasicVehicle"]["signalStatus"] = signalStatus;
 
     Json::StreamWriterBuilder wbuilder;
     wbuilder["commentStyle"] = "None";
