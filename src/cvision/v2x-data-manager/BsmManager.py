@@ -85,6 +85,7 @@ class BsmManager:
         lane_id = jsonString['BasicVehicle']['laneID']
         approach_id = jsonString['BasicVehicle']['approachID']
         signal_group = jsonString['BasicVehicle']['signalGroup']
+        signal_status = jsonString['BasicVehicle']['signalStatus']
 
         now_ms = int(time.time() * 1000)
 
@@ -97,6 +98,7 @@ class BsmManager:
             "lane_id": lane_id,
             "approach_id": approach_id,
             "signal_group": signal_group,
+            "signal_status": signal_status,
             "timestamp": now_ms,
         }
 
