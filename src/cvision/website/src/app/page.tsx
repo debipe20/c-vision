@@ -45,7 +45,7 @@ function useFirebaseAuth() {
 }
 
 /* ==================== TYPES ==================== */
-// ADDED: lane_id / approach_id / signal_group
+// ADDED: lane_id / approach_id / signal_group / signal_status
 type Vehicle = {
   id: string;
   lat: number;
@@ -56,6 +56,7 @@ type Vehicle = {
   lane_id?: string | number;       // ← added
   approach_id?: string | number;   // ← added
   signal_group?: string | number;  // ← added
+  signal_status?: string | number;  // ← added
 };
 
 type PhaseStateRaw = { phase: number; state: string; direction?: string; maneuver?: string };
@@ -277,11 +278,12 @@ export default function Page() {
         // Normalize timestamp
         const ts = raw.ts != null ? Number(raw.ts) : raw.timestamp != null ? Number(raw.timestamp) : undefined;
 
-        // ADDED: lane/approach/signal group (support snake_case and camelCase variants)
+        // ADDED: lane/approach/signal group/signal_status (support snake_case and camelCase variants)
         const lane_id = (raw.lane_id ?? raw.laneId) as string | number | undefined;
         const approach_id = (raw.approach_id ?? raw.approachId) as string | number | undefined;
         const signal_group = (raw.signal_group ?? raw.signalGroup ?? raw.signal_group_id ?? raw.signalGroupId) as string | number | undefined;
-
+        const signal_status = (raw.signal_status ?? raw.signalStatus) as string | number | undefined;
+        
         return {
           id: String(key),
           lat,
@@ -292,6 +294,7 @@ export default function Page() {
           lane_id,
           approach_id,
           signal_group,
+          signal_status,
         } as Vehicle;
       });
 
@@ -384,6 +387,7 @@ export default function Page() {
       const laneId = el.dataset.laneId;
       const approachId = el.dataset.approachId;
       const signalGroup = el.dataset.signalGroup;
+      const signalStatus = el.dataset.signalStatus;
       return `
         <div class="text-sm">
           <div><strong>Vehicle:</strong> ${id}</div>
@@ -393,6 +397,7 @@ export default function Page() {
           ${laneId ? `<div><strong>Lane ID:</strong> ${laneId}</div>` : ""}
           ${approachId ? `<div><strong>Approach ID:</strong> ${approachId}</div>` : ""}
           ${signalGroup ? `<div><strong>Signal Group:</strong> ${signalGroup}</div>` : ""}
+          ${signalStatus ? `<div><strong>Signal Status:</strong> ${signalStatus}</div>` : ""}
           ${ts ? `<div><strong>Time:</strong> ${new Date(ts).toLocaleString()}</div>` : ""}
         </div>`;
     };
@@ -499,13 +504,15 @@ export default function Page() {
       else delete el.dataset.headingDeg;
       if (typeof v.ts === "number") el.dataset.ts = String(v.ts);
       else delete el.dataset.ts;
-      // ADDED: bind lane/approach/signal group into dataset
+      // ADDED: bind lane/approach/signal group/signal_status into dataset
       if (v.lane_id != null) el.dataset.laneId = String(v.lane_id);
       else delete el.dataset.laneId;
       if (v.approach_id != null) el.dataset.approachId = String(v.approach_id);
       else delete el.dataset.approachId;
       if (v.signal_group != null) el.dataset.signalGroup = String(v.signal_group);
       else delete el.dataset.signalGroup;
+      if (v.signal_status != null) el.dataset.signalStatus = String(v.signal_status); 
+      else delete el.dataset.signalStatus;
 
       // emphasize selected vehicle
       el.style.outline = selectedVehicleId === v.id ? `2px solid ${ring}` : "none";
