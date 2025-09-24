@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 
@@ -19,6 +19,8 @@ import { INTERSECTIONS, type StaticPhase } from "@/config/intersections";
 
 /* ==================== MAPBOX ==================== */
 mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || "";
+// Reuse the exact type that Map.flyTo expects
+type FlyToOpts = Parameters<mapboxgl.Map["flyTo"]>[0];
 
 /* ==================== FIREBASE ==================== */
 const firebaseConfig = {
@@ -174,6 +176,28 @@ export default function Page() {
   const vehiclePopupRef = useRef<mapboxgl.Popup | null>(null);
   const [pinnedVehicleId, setPinnedVehicleId] = useState<string | null>(null);
 
+  // ===== Auto-follow & interaction guards =====
+  const [autoFollow, setAutoFollow] = useState(true);
+  const isInteractingRef = useRef(false);
+
+  // safe camera helper (prevents constant eases)
+  const flyToSafe = useCallback((opts: FlyToOpts, { force = false }: { force?: boolean } = {}) => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Only block auto camera moves (from live updates) when Auto-follow is off or user is interacting.
+    // For explicit user actions we pass {force: true} to bypass this guard.
+    if (!force && (!autoFollow || isInteractingRef.current)) return;
+
+    map.stop();
+    map.easeTo({ duration: 500, ...opts });
+  }, [autoFollow]);
+
+  // simple UI throttling (e.g., 1 Hz) for high-rate Firebase streams
+  const lastPaintVehiclesRef = useRef(0);
+  const lastPaintSpatRef = useRef(0);
+  const UI_RATE_MS = 1000; // 1 Hz
+
   /* ==== Auth watcher ==== */
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -229,6 +253,18 @@ export default function Page() {
       document.head.appendChild(s);
     }
 
+    // mark when user interacts → pause auto-follow
+    const map = mapRef.current;
+    map.on("dragstart", () => { isInteractingRef.current = true; setAutoFollow(false); });
+    map.on("zoomstart", () => { isInteractingRef.current = true; setAutoFollow(false); });
+    map.on("rotatestart", () => { isInteractingRef.current = true; setAutoFollow(false); });
+    map.on("pitchstart", () => { isInteractingRef.current = true; setAutoFollow(false); });
+    const clearInteract = () => setTimeout(() => { isInteractingRef.current = false; }, 300);
+    map.on("dragend", clearInteract);
+    map.on("zoomend", clearInteract);
+    map.on("rotateend", clearInteract);
+    map.on("pitchend", clearInteract);
+
     mapRef.current.on("error", (e: unknown) => console.error("Mapbox error:", e));
 
     return () => {
@@ -256,8 +292,13 @@ export default function Page() {
   /* ==== Vehicles (/vehicle_status) ==== */
   useEffect(() => {
     if (authed !== true || approved === false) return;
+
     const ref = dbRef(db, "vehicle_status");
     const unsub = onValue(ref, (snap) => {
+      const now = Date.now();
+      if (now - lastPaintVehiclesRef.current < UI_RATE_MS) return; // 1 Hz throttle (vehicles)
+      lastPaintVehiclesRef.current = now;
+
       const val = snap.val() || {};
 
       const list: Vehicle[] = Object.keys(val).map((key) => {
@@ -268,7 +309,7 @@ export default function Page() {
         // Normalize speed → m/s
         let speed_mps: number | undefined = undefined;
         if (raw.speed_mps != null) speed_mps = Number(raw.speed_mps);
-        else if (raw.speed != null) speed_mps = Number(raw.speed); // db uses `speed`
+        else if (raw.speed != null) speed_mps = Number(raw.speed);
         else if (raw.speed_mph != null) speed_mps = Number(raw.speed_mph) / 2.23693629;
 
         // Normalize heading → degrees
@@ -278,12 +319,13 @@ export default function Page() {
         // Normalize timestamp
         const ts = raw.ts != null ? Number(raw.ts) : raw.timestamp != null ? Number(raw.timestamp) : undefined;
 
-        // ADDED: lane/approach/signal group/signal_status (support snake_case and camelCase variants)
+        // lane/approach/signal group/signal_status
         const lane_id = (raw.lane_id ?? raw.laneId) as string | number | undefined;
         const approach_id = (raw.approach_id ?? raw.approachId) as string | number | undefined;
-        const signal_group = (raw.signal_group ?? raw.signalGroup ?? raw.signal_group_id ?? raw.signalGroupId) as string | number | undefined;
+        const signal_group = (raw.signal_group ?? raw.signalGroup ?? raw.signal_group_id ?? raw.signalGroupId) as
+          | string | number | undefined;
         const signal_status = (raw.signal_status ?? raw.signalStatus) as string | number | undefined;
-        
+
         return {
           id: String(key),
           lat,
@@ -300,16 +342,29 @@ export default function Page() {
 
       setVehicles(list);
 
-      const map = mapRef.current;
-      if (list.length && map && !selectedVehicleId) {
-        const v = list[0];
-        if (typeof v.lon === "number" && typeof v.lat === "number") {
-          if (map.getZoom() < 13) map.flyTo({ center: [v.lon, v.lat], zoom: 14 });
+      // === Ensure a selection & initial center ===
+      if (!list.length) {
+        if (selectedVehicleId) setSelectedVehicleId(null);
+        return;
+      }
+
+      // If there is no selection or the selected one vanished → pick first and center once
+      const exists = list.some(v => v.id === selectedVehicleId);
+      if (!exists) {
+        const first = list[0];
+        setSelectedVehicleId(first.id);
+
+        if (typeof first.lon === "number" && typeof first.lat === "number") {
+          // Force a one-time camera move even if Auto-follow is off
+          flyToSafe({ center: [first.lon, first.lat], zoom: 18 }, { force: true });
         }
       }
+
+      // No continuous auto-fly here; we only center on (re)selection
     });
+
     return () => unsub();
-  }, [db, authed, approved, selectedVehicleId]);
+  }, [db, authed, approved, selectedVehicleId, flyToSafe]);
 
   /* ==== SPaT (merge static config with live states from DB) ==== */
   useEffect(() => {
@@ -317,6 +372,11 @@ export default function Page() {
 
     const ref = dbRef(db, "intersection_status");
     const unsub = onValue(ref, (snap) => {
+      const now = Date.now();
+      if (now - lastPaintSpatRef.current < UI_RATE_MS) return; // 1 Hz throttle (SPaT)
+      lastPaintSpatRef.current = now;
+
+      
       const root = snap.val() || {};
 
       // Build a map: id -> { phaseStates, timestamp }
@@ -357,12 +417,10 @@ export default function Page() {
 
       setSpats(list);
 
+      // default selection if none
       if (!selectedId && list.length) setSelectedId(list[0].intersection_id);
-      const active = list.find((s) => s.intersection_id === (selectedId ?? list[0]?.intersection_id)) || list[0];
-      const map = mapRef.current;
-      if (active && map && typeof active.lon === "number" && typeof active.lat === "number") {
-        map.flyTo({ center: [active.lon, active.lat], zoom: 17 });
-      }
+
+      // NOTE: removed auto fly-to here as well
     });
 
     return () => unsub();
@@ -568,7 +626,7 @@ export default function Page() {
 
         img.addEventListener("click", () => {
           setSelectedId(s.intersection_id);
-          if (mapRef.current) mapRef.current.flyTo({ center: [s.lon as number, s.lat as number], zoom: 18 });
+          flyToSafe({ center: [s.lon as number, s.lat as number], zoom: 18 }, { force: true });
         });
       }
 
@@ -584,7 +642,7 @@ export default function Page() {
         delete cache[id];
       }
     });
-  }, [spats, authed, approved, selectedId, mapStyle]);
+  }, [spats, authed, approved, selectedId, mapStyle, flyToSafe]);
 
   /* ==================== AUTH UI ==================== */
   if (authed === false) {
@@ -720,19 +778,26 @@ export default function Page() {
           </div>
 
           {/* Map style toggle */}
-          <div className="flex gap-2">
-            <button
-              className={`text-xs px-2 py-1 rounded ${mapStyle === "streets" ? "bg-black text-white" : "bg-gray-200"}`}
-              onClick={() => setMapStyle("streets")}
-            >
-              Streets
-            </button>
-            <button
-              className={`text-xs px-2 py-1 rounded ${mapStyle === "satellite" ? "bg-black text-white" : "bg-gray-200"}`}
-              onClick={() => setMapStyle("satellite")}
-            >
-              Satellite
-            </button>
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex gap-2">
+              <button
+                className={`text-xs px-2 py-1 rounded ${mapStyle === "streets" ? "bg-black text-white" : "bg-gray-200"}`}
+                onClick={() => setMapStyle("streets")}
+              >
+                Streets
+              </button>
+              <button
+                className={`text-xs px-2 py-1 rounded ${mapStyle === "satellite" ? "bg-black text-white" : "bg-gray-200"}`}
+                onClick={() => setMapStyle("satellite")}
+              >
+                Satellite
+              </button>
+            </div>
+            {/* Auto-follow toggle */}
+            <label className="flex items-center gap-1 text-xs">
+              <input type="checkbox" checked={autoFollow} onChange={(e) => setAutoFollow(e.target.checked)} />
+              Auto-follow
+            </label>
           </div>
 
           {/* Vehicles dropdown */}
@@ -740,13 +805,13 @@ export default function Page() {
             <h3 className="text-sm font-semibold mb-1">Vehicles ({vehicles.length})</h3>
             <select
               className="w-full border rounded p-1 text-sm mb-2"
-              value={selectedVehicleId ?? (vehicles[0]?.id ?? "")}
+              value={selectedVehicleId ?? ""}
               onChange={(e) => {
                 const id = e.target.value || null;
                 setSelectedVehicleId(id);
                 const v = vehicles.find((x) => x.id === id);
-                if (v && mapRef.current && typeof v.lon === "number" && typeof v.lat === "number") {
-                  mapRef.current.flyTo({ center: [v.lon, v.lat], zoom: 18 });
+                if (v && typeof v.lon === "number" && typeof v.lat === "number") {
+                  flyToSafe({ center: [v.lon, v.lat], zoom: 18 }, { force: true });
                 }
               }}
             >
@@ -785,8 +850,8 @@ export default function Page() {
                 const id = e.target.value || null;
                 setSelectedId(id);
                 const sel = spats.find((s) => s.intersection_id === id);
-                if (sel && mapRef.current && typeof sel.lon === "number" && typeof sel.lat === "number") {
-                  mapRef.current.flyTo({ center: [sel.lon, sel.lat], zoom: 18 });
+                if (sel && typeof sel.lon === "number" && typeof sel.lat === "number") {
+                  flyToSafe({ center: [sel.lon, sel.lat], zoom: 18 }, { force: true });
                 }
               }}
             >
