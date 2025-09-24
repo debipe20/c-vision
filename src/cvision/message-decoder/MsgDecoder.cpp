@@ -200,8 +200,8 @@ string MsgDecoder::spatDecoder(string spatPayload)
         jsonString = Json::writeString(builder, jsonObject);
     }
 
-    double currentTime = static_cast<double>(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
-    cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Decoded SPaT Json is following: \n" << jsonString << endl;
+    // double currentTime = static_cast<double>(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+    // cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Decoded SPaT Json is following: \n" << jsonString << endl;
     
     return jsonString;
 }
@@ -251,8 +251,8 @@ string MsgDecoder::bsmDecoder(string bsmPayload)
         jsonString = basicVehicle.basicVehicle2Json();
     }
     
-    double currentTime = static_cast<double>(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
-    cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Decoded BSM Json is following: \n" << jsonString << endl;
+    // double currentTime = static_cast<double>(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+    // cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Decoded BSM Json is following: \n" << jsonString << endl;
     return jsonString;
 }
 

@@ -1,0 +1,6 @@
+Terminal Setup Instruction:
+1. Map-Spat-Sender -> printf "\033]0;Map-Sat-Sender\a"
+2. V2X-Data-Listener -> printf "\033]0;V2X-Data-Listener\a"
+3. Message-Decoder -> printf "\033]0;Message-Decoder\a"
+4. Vehicle-Sever -> printf "\033]0;Vehicle-Server\a"
+5. V2X-Data-Manager -> printf "\033]0;V2X-Data-Manager\a"

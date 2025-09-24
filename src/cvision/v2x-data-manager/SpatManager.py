@@ -198,7 +198,7 @@ class SpatManager:
         # Build and publish only configured phases, in configured order
         phase_states = []
         for phases in phases_config:
-            raw_state = incoming_by_phase.get(phases, "unknown")
+            raw_state = incoming_by_phase.get(phases, ("unknown", None, None))[0]  # Get the first element ('protected_green')
             mapped_state = STATE_MAP.get(raw_state, "stopAndRemain")
             phase_states.append({"phase": phases, "state": mapped_state, "minEndTime": min_end, "maxEndTime": max_end,})
 

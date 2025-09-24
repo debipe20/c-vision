@@ -39,6 +39,7 @@ int main()
     VehicleServer vehicleServer;
     BasicVehicle basicVehicle;
     MapManager mapManager;
+    SpatManager spatManager;
     const string HostIP = jsonObject["IPAddress"]["HostIp"].asString();
     UdpSocket vehicleServerSocket(static_cast<short unsigned int>(jsonObject["PortNumber"]["VehicleServer"].asInt()));
     const int v2xDataManagerPort = static_cast<short unsigned int>(jsonObject["PortNumber"]["V2XDataManager"].asInt());
@@ -53,7 +54,7 @@ int main()
         vehicleServerSocket.receiveData(receiveBuffer, sizeof(receiveBuffer));
         string receivedJsonString(receiveBuffer);
         currentTime = static_cast<double>(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
-
+        // cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "]Received Json String: \n" << receivedJsonString << endl;
         msgType = vehicleServer.getMessageType(receivedJsonString);
 
         if (msgType == MsgEnum::DSRCmsgID_bsm)
@@ -72,12 +73,11 @@ int main()
             vehicleServer.processMap(receivedJsonString, mapManager);
         }
 
-        //     else if (msgType == MsgEnum::DSRCmsgID_spat)
-        //     {
-        //         cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Received SPaT" << endl;
-        //         sendingJsonString = msgDecoder.spatDecoder(receivedPayload);
-        //         vehicleServerSocket.sendData(HostIP, static_cast<short unsigned int>(v2xDataManagerPort), sendingJsonString);
-        //     }
+            else if (msgType == MsgEnum::DSRCmsgID_spat)
+            {
+                cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Received SPaT" << endl;
+                vehicleServer.processSpat(receivedJsonString, spatManager);
+            }
     }
 
     return 0;

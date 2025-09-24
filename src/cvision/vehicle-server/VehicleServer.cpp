@@ -40,8 +40,8 @@ int VehicleServer::getMessageType(string jsonString)
         else if ((jsonObject["MsgType"]).asString() == "BSM")
             messageType = MsgEnum::DSRCmsgID_bsm;
 
-        else if ((jsonObject["MsgType"]).asString() == "SSM")
-            messageType = MsgEnum::DSRCmsgID_ssm;
+        else if ((jsonObject["MsgType"]).asString() == "SPaT")
+            messageType = MsgEnum::DSRCmsgID_spat;
 
         else
             cout << "[" << fixed << showpoint << setprecision(4) << timeStamp << "] Message type is unknown" << std::endl;
@@ -90,7 +90,7 @@ string VehicleServer::processBSM(string jsonString, BasicVehicle basicVehicle)
     int laneID{};
     int approachID{};
     int signalGroup{};
-    string signalStatus{};
+
     string updatedJsonString{};
 
     vehicleID = basicVehicle.getTemporaryID();
@@ -112,8 +112,8 @@ string VehicleServer::processBSM(string jsonString, BasicVehicle basicVehicle)
     findVehicleIDInList->vehicleLaneID = laneID;
     findVehicleIDInList->vehicleApproachID = approachID;
     findVehicleIDInList->vehicleSignalGroup = signalGroup;
-    findVehicleIDInList->vehicleSignalStatus = signalStatus;
-    updatedJsonString = updateBsmJsonString(jsonString, laneID, approachID, signalGroup);
+     
+    updatedJsonString = updateBsmJsonString(jsonString, laneID, approachID, signalGroup, findVehicleIDInList->vehicleSignalStatus);
 
     return updatedJsonString;
 }
@@ -140,6 +140,28 @@ void VehicleServer::processMap(string jsonString, MapManager mapManager)
             VehicleServerList[i].mapManager.json2MapPayload(jsonString);
             VehicleServerList[i].mapManager.maintainAvailableMapList();
         }
+    }
+}
+
+/*
+
+*/
+void VehicleServer::processSpat(string jsonString, SpatManager spatManager)
+{
+    int intersection_id{};
+    int signal_group{};
+    string phase_status{};
+    
+    spatManager.manage_spat_data(jsonString);
+    spatManager.delete_timed_out_spat_data_from_available_spat_list();
+
+    for (size_t i = 0; i < VehicleServerList.size(); i++)
+    {
+        intersection_id = VehicleServerList[i].vehicleStatusManager.getIntersectionID();
+        signal_group = VehicleServerList[i].vehicleStatusManager.getSignalGroup();
+        phase_status = spatManager.get_signal_phase_status(intersection_id, signal_group);  
+        VehicleServerList[i].vehicleSignalStatus = phase_status;
+        cout << "Setting Phase status as " << phase_status << endl;
     }
 }
 
@@ -290,20 +312,19 @@ double VehicleServer::getCurrentTimeInSeconds()
 void VehicleServer::printVehicleServerList()
 {
     double timeStamp = getPosixTimestamp();
+    cout << "Printing Vehicle Server List" << endl;
     
     if (!VehicleServerList.empty())
     {
-        cout << "Vehicle ID" << " " << "Lane ID" << " " << "Signal Group" << " " << "Update Time" << endl;
+        cout << "Vehicle ID" << " " << "Lane ID" << " " << "Signal Group" << " " << "Signal Status" << " " << "Update Time" << endl;
 
         for (size_t i = 0; i < VehicleServerList.size(); i++)
-            cout << VehicleServerList[i].vehicleID << " " << VehicleServerList[i].vehicleLaneID << " " << VehicleServerList[i].vehicleSignalGroup << " " << VehicleServerList[i].updateTime << endl;
+            cout << VehicleServerList[i].vehicleID << " " << VehicleServerList[i].vehicleLaneID << " " << VehicleServerList[i].vehicleSignalGroup << " " << VehicleServerList[i].vehicleSignalStatus << " " << VehicleServerList[i].updateTime << endl;
     }
     
     else
         cout << "[" << fixed << showpoint << setprecision(2) << timeStamp << "] Vehicle Server Lists is empty" << endl;
 }
-
-
 
 string VehicleServer::updateBsmJsonString(const string& inJson, int laneID, int approachID, int signalGroup, string signalStatus) 
 {
@@ -332,7 +353,7 @@ string VehicleServer::updateBsmJsonString(const string& inJson, int laneID, int 
     
     updatedJsonString = Json::writeString(wbuilder, jsonObject);
 
-    cout << "Updated BSM Json String is: \n" << updatedJsonString << endl;
+    // cout << "Updated BSM Json String is: \n" << updatedJsonString << endl;
 
     return updatedJsonString;
 }

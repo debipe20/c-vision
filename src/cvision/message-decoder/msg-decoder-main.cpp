@@ -43,6 +43,7 @@ int main() {
     const string HostIP = jsonObject["IPAddress"]["HostIp"].asString();
     UdpSocket msgDecoderSocket(static_cast<short unsigned int>(jsonObject["PortNumber"]["MessageDecoder"].asInt()));
     const int vehicleServerPort = static_cast<short unsigned int>(jsonObject["PortNumber"]["VehicleServer"].asInt());
+    const int v2xDataManagerPort = static_cast<short unsigned int>(jsonObject["PortNumber"]["V2XDataManager"].asInt());
     char receiveBuffer[2048];
     int msgType{};
     string sendingJsonString{};
@@ -80,32 +81,8 @@ int main() {
                 cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Received SPaT" <<endl;
                 sendingJsonString = msgDecoder.spatDecoder(receivedPayload);
                 msgDecoderSocket.sendData(HostIP, static_cast<short unsigned int>(vehicleServerPort), sendingJsonString);
+                msgDecoderSocket.sendData(HostIP, static_cast<short unsigned int>(v2xDataManagerPort), sendingJsonString);
             }
-
-        // receivedPayload = msgDecoderSocket.receivePayloadHexString();
-        // cout << receivedPayload << endl;
-        // size_t pos = receivedPayload.find("001");
-
-        // if (pos != string::npos)
-        // {
-        //     extractedPayload = receivedPayload.erase(0, pos);
-        //     msgType = msgDecoder.getMessageType(extractedPayload);
-
-        //     if (msgType == MsgEnum::DSRCmsgID_map)
-        //     {
-
-        //     }
-
-        //     else if (msgType == MsgEnum::DSRCmsgID_bsm)
-        //     {
-
-        //     }
-
-        //     else if (msgType == MsgEnum::DSRCmsgID_spat)
-        //     {
-
-        //     }
-        // }
     }
     
     return 0;

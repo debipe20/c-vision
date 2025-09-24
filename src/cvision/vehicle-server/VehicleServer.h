@@ -52,6 +52,7 @@ public:
     void managingVehicleServerList(BasicVehicle basicVehicle);
     string processBSM(string jsonString, BasicVehicle basicVehicle);
     void processMap(string jsonString, MapManager mapManager);
+    void processSpat(string jsonString, SpatManager spatManager);
     void deleteTimedOutVehicleInformationFromVehicleServerList();
     bool checkAddVehicleIDToVehicleServerList(int vehicleID);
     bool checkUpdateVehicleIDInVehicleServerList(int vehicleID);
