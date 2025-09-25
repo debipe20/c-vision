@@ -26,7 +26,7 @@ Minimal required fields:
 This is a sample Json:
 ``` json
 {
-  "IPAddress": { "HostIp": <"127.0.0.1"> }, 
+  "IPAddress": { "HostIp": "127.0.0.1"}, 
   "PortNumber": { "MessageDecoder": 5000 },
   "VehicleInformation": { "EgoVehicleId": "VEHICLE_123" }
 }
@@ -91,7 +91,7 @@ DB_URL = "https://c-vision-7e1ec-default-rtdb.firebaseio.com/"  # replace if dif
 **Windows**
 ```powershell
 # from the script folder
-py bsm-sender.py
+python.exe bsm-sender.py
 ```
 **Linux**
 ```bash
