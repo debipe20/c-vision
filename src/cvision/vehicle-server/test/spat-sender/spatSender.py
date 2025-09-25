@@ -1,13 +1,14 @@
 """
 Usage:  
-python3 bsmsender.py 
-python3 bsmsender.py once
+python3 spatsender.py 
+python3 spatsender.py once
 """
 import socket, json, time, os, platform, sys
 from itertools import cycle
 
 def main(loop=True):
-    FILENAMES = ["bsm.json", "bsm1.json"]
+    # FILENAMES = ["spat.json", "spat1.json"]
+    FILENAMES = ["spat.json"]
 
     # config (kept as-is)
     current_os = platform.system()
@@ -22,18 +23,12 @@ def main(loop=True):
         config = json.load(config_file)
 
     hostIp = config["IPAddress"]["HostIp"]
-    port = config["PortNumber"]["MessageDecoder"]
-    bsm_sender_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    bsm_sender_socket.bind((hostIp, port))  # left as-is per your format
+    port = config["PortNumber"]["SpatSender"]
+    spat_sender_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    spat_sender_socket.bind((hostIp, port))  # left as-is per your format
 
     vehicleServerPort = config["PortNumber"]["VehicleServer"]
     client_info = (hostIp, vehicleServerPort)
-
-    # (kept) load once, not used later but leaving your lines intact
-    fileName = "bsm.json"
-    with open(fileName, "r", encoding="utf-8") as f:
-        obj = json.load(f)
-    encoded_data = json.dumps(obj).encode("utf-8")
 
     send_period = 0.1  # 10 Hz
     next_time = time.perf_counter()
@@ -43,24 +38,31 @@ def main(loop=True):
         file_iter = cycle(FILENAMES) if loop else iter(FILENAMES)
 
         for fname in file_iter:
+            # pacing with catch-up to avoid drift
             now = time.perf_counter()
+            while next_time <= now:
+                next_time += send_period
             sleep_s = next_time - now
             if sleep_s > 0:
                 time.sleep(sleep_s)
-            next_time += send_period
 
             try:
+                # validate JSON and re-serialize (ensures well-formed payload)
                 with open(fname, "r", encoding="utf-8") as f:
-                    data = f.read()
-                bsm_sender_socket.sendto(data.encode("utf-8"), client_info)
-                print(f"Sent {fname} at {time.time():.3f}")
+                    obj = json.load(f)
+                data = json.dumps(obj, separators=(",", ":"), ensure_ascii=False)
+
+                spat_sender_socket.sendto(data.encode("utf-8"), client_info)
+                print(f"Sent {fname} to {client_info[0]}:{client_info[1]} at {time.time():.3f}")
             except FileNotFoundError:
                 print(f"[WARN] {fname} not found; skipping.")
+            except json.JSONDecodeError as e:
+                print(f"[WARN] {fname} invalid JSON ({e}); skipping.")
 
     except KeyboardInterrupt:
         print("Stopping…")
     finally:
-        bsm_sender_socket.close()
+        spat_sender_socket.close()
 
 if __name__ == "__main__":
     # one optional arg: 'once' → loop=False; anything else (or nothing) → loop=True

@@ -147,9 +147,10 @@ void VehicleServer::processMap(string jsonString, MapManager mapManager)
 }
 
 /*
-
+    - Method for processing SPaT information
+    - This method set the signal phase status for each vehicle in the Vehicle Server List
 */
-void VehicleServer::processSpat(string jsonString, SpatManager spatManager)
+void VehicleServer::processSpat(string jsonString)
 {
     int intersection_id{};
     int signal_group{};
@@ -158,13 +159,13 @@ void VehicleServer::processSpat(string jsonString, SpatManager spatManager)
     spatManager.manage_spat_data(jsonString);
     spatManager.delete_timed_out_spat_data_from_available_spat_list();
 
+
     for (size_t i = 0; i < VehicleServerList.size(); i++)
     {
         intersection_id = VehicleServerList[i].vehicleStatusManager.getIntersectionID();
         signal_group = VehicleServerList[i].vehicleStatusManager.getSignalGroup();
         phase_status = spatManager.get_signal_phase_status(intersection_id, signal_group);  
         VehicleServerList[i].vehicleSignalStatus = phase_status;
-        cout << "Setting Phase status as " << phase_status << endl;
     }
 }
 
@@ -315,7 +316,6 @@ double VehicleServer::getCurrentTimeInSeconds()
 void VehicleServer::printVehicleServerList()
 {
     double timeStamp = getPosixTimestamp();
-    cout << "Printing Vehicle Server List" << endl;
     
     if (!VehicleServerList.empty())
     {
@@ -326,7 +326,7 @@ void VehicleServer::printVehicleServerList()
     }
     
     else
-        cout << "[" << fixed << showpoint << setprecision(2) << timeStamp << "] Vehicle Server Lists is empty" << endl;
+        cout << "[" << fixed << showpoint << setprecision(2) << timeStamp << "] Vehicle Server List is empty" << endl;
 }
 
 string VehicleServer::updateBsmJsonString(const string& inJson, int intersectionID, int laneID, int approachID, int signalGroup, string signalStatus) 

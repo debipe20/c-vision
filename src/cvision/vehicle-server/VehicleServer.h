@@ -44,7 +44,7 @@ private:
     vector<ServerList> VehicleServerList;
     ServerList vehicleinfo;
     int timedOutVehicleID{};
-
+    SpatManager spatManager;
 public:
     VehicleServer();
     ~VehicleServer();
@@ -52,7 +52,7 @@ public:
     void managingVehicleServerList(BasicVehicle basicVehicle);
     string processBSM(string jsonString, BasicVehicle basicVehicle);
     void processMap(string jsonString, MapManager mapManager);
-    void processSpat(string jsonString, SpatManager spatManager);
+    void processSpat(string jsonString);
     void deleteTimedOutVehicleInformationFromVehicleServerList();
     bool checkAddVehicleIDToVehicleServerList(int vehicleID);
     bool checkUpdateVehicleIDInVehicleServerList(int vehicleID);

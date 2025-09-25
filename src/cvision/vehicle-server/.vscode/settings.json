@@ -47,7 +47,8 @@
         "streambuf": "cpp",
         "typeinfo": "cpp",
         "chrono": "cpp",
-        "bitset": "cpp"
+        "bitset": "cpp",
+        "ratio": "cpp"
     },
     "python.autoComplete.extraPaths": [
         "/home/carma/catkin_ws/devel/lib/python3/dist-packages",
