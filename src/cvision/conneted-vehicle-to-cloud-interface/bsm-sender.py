@@ -70,11 +70,9 @@ def main():
                     file.seek(0)
                     continue
 
-                data = line.strip()
-                if not data:
+                payload = line.strip()
+                if not payload:
                     continue  # skip blank lines
-
-                payload = data.encode()
 
                 now = time.perf_counter()
                 sleep_s = next_time - now
