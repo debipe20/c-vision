@@ -38,7 +38,10 @@ private:
     string mapIdentifier = "0012";
     string bsmIdentifier = "0014";
     string spatIdentifier = "0013";
-
+    double start_time_s{};
+    double min_end_time_s{};
+    double max_end_time_s{};
+    double elapsed_time_s{};
 
 public:
     MsgDecoder();
@@ -48,4 +51,5 @@ public:
     string mapDecoder(string mapPayload);
     string spatDecoder(string spatPayload);
     string bsmDecoder(string bsmPayload);
+    void get_min_max_elapsed_time_in_seconds(int minute_of_the_year, int ms_of_minute, double start_time, double min_end_time, double max_end_time);
 };

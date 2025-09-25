@@ -71,15 +71,15 @@ string MsgDecoder::mapDecoder(string mapPayload)
     std::ifstream configJson("/nojournal/bin/mmitss-phase3-master-config.json");
     string configJsonString((std::istreambuf_iterator<char>(configJson)), std::istreambuf_iterator<char>());
     Json::CharReaderBuilder builder;
-    Json::CharReader * reader = builder.newCharReader();
+    Json::CharReader *reader = builder.newCharReader();
     string errors{};
-    reader->parse(configJsonString.c_str(), configJsonString.c_str() + configJsonString.size(), &jsonObject_config, &errors);        
+    reader->parse(configJsonString.c_str(), configJsonString.c_str() + configJsonString.size(), &jsonObject_config, &errors);
     delete reader;
 
     Json::Value jsonObject;
-	Json::StreamWriterBuilder writeBuilder;
-	writeBuilder["commentStyle"] = "None";
-	writeBuilder["indentation"] = "";
+    Json::StreamWriterBuilder writeBuilder;
+    writeBuilder["commentStyle"] = "None";
+    writeBuilder["indentation"] = "";
 
     outputfile.open("Map.map.payload");
     outputfile << "payload"
@@ -106,7 +106,7 @@ string MsgDecoder::mapDecoder(string mapPayload)
 
     // double currentTime = static_cast<double>(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
     // cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Decoded MAP Json is following: \n" << jsonString << endl;
-    
+
     return jsonString;
 }
 
@@ -169,18 +169,25 @@ string MsgDecoder::spatDecoder(string spatPayload)
                 const auto &phaseState = spatOut.phaseState[i];
                 currVehPhaseState = static_cast<unsigned int>(phaseState.currState);
 
-                jsonObject["Spat"]["phaseState"][phaseListIndex]["phaseNo"] = (i + 1);
-                jsonObject["Spat"]["phaseState"][phaseListIndex]["startTime"] = phaseState.startTime;
-                jsonObject["Spat"]["phaseState"][phaseListIndex]["minEndTime"] = phaseState.minEndTime;
-                jsonObject["Spat"]["phaseState"][phaseListIndex]["maxEndTime"] = phaseState.maxEndTime;
-                // jsonObject["Spat"]["phaseState"][phaseListIndex]["elapsedTime"] = -1;                
-                
+                get_min_max_elapsed_time_in_seconds(spatOut.timeStampMinute, spatOut.timeStampSec, phaseState.startTime, phaseState.minEndTime, phaseState.maxEndTime);
+
+                    jsonObject["Spat"]["phaseState"][phaseListIndex]["phaseNo"] = (i + 1);
+                // jsonObject["Spat"]["phaseState"][phaseListIndex]["startTime"] = phaseState.startTime;
+                // jsonObject["Spat"]["phaseState"][phaseListIndex]["minEndTime"] = phaseState.minEndTime;
+                // jsonObject["Spat"]["phaseState"][phaseListIndex]["maxEndTime"] = phaseState.maxEndTime;
+                // jsonObject["Spat"]["phaseState"][phaseListIndex]["elapsedTime"] = -1;
+
+                jsonObject["Spat"]["phaseState"][phaseListIndex]["startTime"] = start_time_s;
+                jsonObject["Spat"]["phaseState"][phaseListIndex]["minEndTime"] = min_end_time_s;
+                jsonObject["Spat"]["phaseState"][phaseListIndex]["maxEndTime"] = max_end_time_s;
+                jsonObject["Spat"]["phaseState"][phaseListIndex]["elapsedTime"] = elapsed_time_s;
+
                 if (currVehPhaseState == RED)
                     jsonObject["Spat"]["phaseState"][phaseListIndex]["currState"] = "red";
 
                 else if (currVehPhaseState == FLASHING_RED)
                     jsonObject["Spat"]["phaseState"][phaseListIndex]["currState"] = "flashing_red";
-                
+
                 else if (currVehPhaseState == PERMISSIVE_GREEN)
                     jsonObject["Spat"]["phaseState"][phaseListIndex]["currState"] = "permissive_green";
 
@@ -200,12 +207,12 @@ string MsgDecoder::spatDecoder(string spatPayload)
         jsonString = Json::writeString(builder, jsonObject);
     }
 
-    // double currentTime = static_cast<double>(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
-    // cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Decoded SPaT Json is following: \n" << jsonString << endl;
-    
+    double currentTime = static_cast<double>(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+    cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Decoded SPaT Json is following: \n"
+         << jsonString << endl;
+
     return jsonString;
 }
-
 
 string MsgDecoder::bsmDecoder(string bsmPayload)
 {
@@ -250,10 +257,45 @@ string MsgDecoder::bsmDecoder(string bsmPayload)
         basicVehicle.setWidth_cm(bsmOut.vehWidth);
         jsonString = basicVehicle.basicVehicle2Json();
     }
-    
+
     // double currentTime = static_cast<double>(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
     // cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Decoded BSM Json is following: \n" << jsonString << endl;
     return jsonString;
+}
+
+void MsgDecoder::get_min_max_elapsed_time_in_seconds(int minute_of_the_year, int ms_of_minute, double start_time, double min_end_time, double max_end_time)
+{
+    // Small epsilon (1 ms) so values at the exact threshold don't flicker to negative due to jitter
+    const double EPS = 1e-3;
+
+    // Current time in seconds since start of the hour
+    double now_sec = (minute_of_the_year % 60) * 60.0 + (ms_of_minute / 1000.0);
+
+    // Convert tenths of a second to seconds (inputs are in 0.1s per J2735)
+    double min_end_abs = min_end_time / 10.0;
+    double max_end_abs = max_end_time / 10.0;
+
+    // Remaining times (never negative), with small epsilon for stability
+    min_end_time_s = std::max(0.0, (min_end_abs - now_sec) + EPS);
+    max_end_time_s = std::max(0.0, (max_end_abs - now_sec) + EPS);
+
+    // Start and elapsed
+    if (start_time >= 0.0 && start_time != 36001.0)
+    {
+        start_time_s = start_time / 10.0;
+
+        // Hour wrap: if start appears after "now", assume it began in the previous hour
+        if (start_time_s > now_sec)
+            start_time_s -= 3600.0;
+
+        elapsed_time_s = std::max(0.0, now_sec - start_time_s);
+    }
+
+    else
+    {
+        start_time_s = -1.0;
+        elapsed_time_s = -1.0;
+    }
 }
 
 MsgDecoder::~MsgDecoder()

@@ -22,17 +22,15 @@ config = json.load(config_file)
 config_file.close()
 
 hostIp = config["IPAddress"]["HostIp"]
-port = config["PortNumber"]["BsmSender"]
-
-bsm_sender_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-bsm_sender_socket.bind((hostIp,port))
+port = config["PortNumber"]["SpatSender"]
+spat_sender_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+spat_sender_socket.bind((hostIp,port))
 
 msg_decoder_port = config["PortNumber"]["MessageDecoder"]
 client_info = (hostIp, msg_decoder_port)
 
-file_name = "bsm-hex.txt"
-# file_name = "bsm-hex-mixed-id.txt"
-# file = open(file_name, "r")
+file_name = "spat-hex.txt"
+
 send_period = 0.1  # 10 Hz
 next_time = time.perf_counter()
 
@@ -56,11 +54,11 @@ try:
                 time.sleep(sleep_s)
             next_time += send_period
 
-            bsm_sender_socket.sendto(payload,client_info)
+            spat_sender_socket.sendto(payload,client_info)
             print(f"sent payload at time {time.time():.6f}")
 
 except KeyboardInterrupt:
     print("\nStopped by user.")
     
 finally:
-    bsm_sender_socket.close()
+    spat_sender_socket.close()

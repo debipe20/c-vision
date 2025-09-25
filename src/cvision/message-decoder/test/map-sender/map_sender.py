@@ -22,8 +22,8 @@ config = json.load(config_file)
 config_file.close()
 
 hostIp = config["IPAddress"]["HostIp"]
-# port = config["PortNumber"]["V2XDataSender"]
-port = 5001
+port = config["PortNumber"]["MapSender"]
+
 map_sender_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 map_sender_socket.bind((hostIp,port))
 
