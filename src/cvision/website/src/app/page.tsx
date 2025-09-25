@@ -62,7 +62,7 @@ type Vehicle = {
   signal_status?: string | number;  // ← added
 };
 
-type PhaseStateRaw = { phase: number; state: string; direction?: string; maneuver?: string };
+type PhaseStateRaw = { phase: number; state: string; direction?: string; maneuver?: string; minEndTime?: number; maxEndTime?: number; startTime?: number; elapsedTime?: number;};
 type SpatItemRaw = {
   IntersectionName?: string;
   IntersectionID?: number | string;
@@ -70,9 +70,13 @@ type SpatItemRaw = {
   lat?: number;
   lon?: number;
   timestamp?: number;
+  minEndTime?: number;
+  maxEndTime?: number;
+  startTime?: number;
+  elapsedTime?: number;
 };
 
-type PhaseState = { phase: number; state: string; direction?: string; maneuver?: string };
+type PhaseState = { phase: number; state: string; direction?: string; maneuver?: string; minEndTime?: number; maxEndTime?: number; startTime?: number; elapsedTime?: number;};
 type Spat = {
   intersection_id: string;
   intersection_name?: string;
@@ -130,9 +134,9 @@ function colorFor(id: string) {
 /** Merge live phase states into static config */
 function mergePhases(
   config: StaticPhase[],
-  live?: Array<{ phase: number; state?: string; direction?: string; maneuver?: string }>
+  live?: Array<{ phase: number; state?: string; direction?: string; maneuver?: string; minEndTime?: number; maxEndTime?: number; startTime?: number; elapsedTime?: number;}>
 ): PhaseState[] {
-  const byPhase = new Map<number, { state?: string; direction?: string; maneuver?: string }>();
+  const byPhase = new Map<number, { state?: string; direction?: string; maneuver?: string; minEndTime?: number; maxEndTime?: number; startTime?: number; elapsedTime?: number;}>();
   (live || []).forEach((p) => byPhase.set(Number(p.phase), p));
   return config.map((c) => {
     const l = byPhase.get(c.phase);
@@ -141,9 +145,29 @@ function mergePhases(
       state: l?.state ?? "stopAndRemain", // default red if nothing live yet
       direction: l?.direction ?? c.direction,
       maneuver: l?.maneuver ?? c.maneuver,
+      minEndTime: l?.minEndTime,
+      maxEndTime: l?.maxEndTime,
+      startTime: l?.startTime,
+      elapsedTime: l?.elapsedTime,
     };
   });
 }
+// Helper: ms → seconds string (one decimal), guard undefined
+function fmtMs(ms?: number) {
+  if (typeof ms !== "number" || !isFinite(ms)) return "–";
+  return `${(ms / 1000).toFixed(1)} s`;
+}
+
+// --- ADD: elapsed time helper ---
+const MS_PER_MIN = 60000;
+const mod = (a: number, b: number) => ((a % b) + b) % b;
+
+function elapsedMsForPhase(ps?: PhaseState, siteTimestamp?: number) {
+  if (!ps || typeof ps.startTime !== "number" || typeof siteTimestamp !== "number") return undefined;
+  const nowInMinute = siteTimestamp % MS_PER_MIN;
+  return mod(nowInMinute - ps.startTime, MS_PER_MIN);
+}
+
 
 /* ==================== PAGE ==================== */
 export default function Page() {
@@ -176,6 +200,8 @@ export default function Page() {
   // Vehicle hover popup + pin state
   const vehiclePopupRef = useRef<mapboxgl.Popup | null>(null);
   const [pinnedVehicleId, setPinnedVehicleId] = useState<string | null>(null);
+  
+  const spatPopupRef = useRef<mapboxgl.Popup | null>(null); // NEW: hover popup for intersections on map
 
   // ===== Auto-follow & interaction guards =====
   const [autoFollow, setAutoFollow] = useState(true);
@@ -245,6 +271,7 @@ export default function Page() {
 
     // init reusable vehicle popup for current map instance
     vehiclePopupRef.current = new mapboxgl.Popup({ closeButton: false, closeOnClick: false, offset: 12 });
+    spatPopupRef.current = new mapboxgl.Popup({closeButton: false,closeOnClick: false,offset: 10,maxWidth: "520px",  className: "spat-popup"});
 
     // z-index safety
     if (!document.getElementById("mapbox-z-fix")) {
@@ -271,6 +298,8 @@ export default function Page() {
     return () => {
       vehiclePopupRef.current?.remove();
       vehiclePopupRef.current = null;
+      spatPopupRef.current?.remove();
+      spatPopupRef.current = null;
       mapRef.current?.remove();
       mapRef.current = null;
     };
@@ -613,6 +642,24 @@ export default function Page() {
 
     const cache = spatMarkersRef.current;
 
+    const buildTooltipHtml = (s: Spat) => {
+      const rows = s.phaseStates.slice(0, 6).map(ps => `
+        <tr>
+          <td style="padding:2px 6px">P${ps.phase}</td>
+          <td style="padding:2px 6px">${ps.state}</td>
+          <td style="padding:2px 6px">${fmtMs(ps.minEndTime)}</td>
+          <td style="padding:2px 6px">${fmtMs(ps.maxEndTime)}</td>
+        </tr>`).join("");
+      return `
+        <div class="text-xs">
+          <div><strong>${s.intersection_name || s.intersection_id}</strong></div>
+          <table style="margin-top:4px; border-collapse:collapse; white-space:nowrap">
+            <thead><tr><th style="padding:2px 6px">Phase</th><th style="padding:2px 6px">State</th><th style="padding:2px 6px">Min</th><th style="padding:2px 6px">Max</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    };
+
     spats.forEach((s) => {
       if (typeof s.lon !== "number" || typeof s.lat !== "number") return;
 
@@ -630,6 +677,12 @@ export default function Page() {
         marker = new mapboxgl.Marker({ element: img, anchor: "center" });
         cache[s.intersection_id] = marker;
 
+        img.addEventListener("mouseenter", () => {
+          const p = spatPopupRef.current; if (!p) return;
+          p.setLngLat([s.lon as number, s.lat as number]).setHTML(buildTooltipHtml(s)).addTo(map);
+        });
+        img.addEventListener("mouseleave", () => { spatPopupRef.current?.remove(); });
+        
         img.addEventListener("click", () => {
           setSelectedId(s.intersection_id);
           flyToSafe({ center: [s.lon as number, s.lat as number], zoom: 18 }, { force: true });
@@ -888,23 +941,36 @@ export default function Page() {
                 const color = lampHex(ps.state);
                 const approach = directionToApproach(ps.direction);
                 const arrows = arrowsForManeuver(ps.maneuver);
+                  // --- ADD: values used by the hover title/panel ---
+                const elapsed = elapsedMsForPhase(ps, selected?.timestamp);
+                const tooltip =
+                  `P${ps.phase} • ${ps.state} • Min: ${fmtMs(ps.minEndTime)} • ` +
+                  `Max: ${fmtMs(ps.maxEndTime)} • Elapsed: ${fmtMs(elapsed)}` +
+                  (ps.startTime !== undefined ? ` • Start: ${fmtMs(ps.startTime)}` : "");
+
                 return (
                   <div key={`card-${ps.phase}`} className="rounded-xl overflow-hidden shadow bg-neutral-800 text-white">
                     <div className="px-3 py-2 flex items-center justify-between border-b border-neutral-700">
                       <div className="text-sm font-semibold">{selected.intersection_name || selected.intersection_id} — P{ps.phase}</div>
-                      <div className="flex gap-1" title={ps.state}>
-                        <span
-                          className="inline-block w-2 h-2 rounded-full"
-                          style={{ background: "#16a34a", opacity: color === "#16a34a" ? 1 : 0.2 }}
-                        />
-                        <span
-                          className="inline-block w-2 h-2 rounded-full"
-                          style={{ background: "#f59e0b", opacity: color === "#f59e0b" ? 1 : 0.2 }}
-                        />
-                        <span
-                          className="inline-block w-2 h-2 rounded-full"
-                          style={{ background: "#e11d48", opacity: color === "#e11d48" ? 1 : 0.2 }}
-                        />
+                      
+                      {/* ICON GROUP WITH HOVER TOOLTIP */}
+                      <div className="relative group" title={tooltip}>
+                        <div className="flex gap-1" aria-label="phase-status">
+                          <span className="inline-block w-2 h-2 rounded-full" style={{ background: "#16a34a", opacity: color === "#16a34a" ? 1 : 0.2 }} />
+                          <span className="inline-block w-2 h-2 rounded-full" style={{ background: "#f59e0b", opacity: color === "#f59e0b" ? 1 : 0.2 }} />
+                          <span className="inline-block w-2 h-2 rounded-full" style={{ background: "#e11d48", opacity: color === "#e11d48" ? 1 : 0.2 }} />
+                        </div>
+                        {/* Pretty tooltip (CSS-only) */}
+                        <div className="hidden group-hover:block absolute right-0 mt-2 w-56 rounded-lg bg-black/90 text-white text-[11px] p-3 shadow-lg">
+                          <div className="font-semibold mb-1">Phase P{ps.phase}</div>
+                          <div className="grid grid-cols-3 gap-y-1">
+                            <div className="opacity-70">State</div><div className="col-span-2">{ps.state}</div>
+                            <div className="opacity-70">Min end</div><div className="col-span-2">{fmtMs(ps.minEndTime)}</div>
+                            <div className="opacity-70">Max end</div><div className="col-span-2">{fmtMs(ps.maxEndTime)}</div>
+                            <div className="opacity-70">Elapsed</div><div className="col-span-2">{fmtMs(elapsed)}</div>
+                            {ps.startTime !== undefined && (<><div className="opacity-70">Start</div><div className="col-span-2">{fmtMs(ps.startTime)}</div></>)}
+                          </div>
+                        </div>
                       </div>
                     </div>
                     <div className="px-3 py-3 flex items-center justify-between">

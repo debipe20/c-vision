@@ -158,7 +158,7 @@ void VehicleServer::processSpat(string jsonString)
     
     spatManager.manage_spat_data(jsonString);
     spatManager.delete_timed_out_spat_data_from_available_spat_list();
-
+    spatManager.print_available_spat_list();
 
     for (size_t i = 0; i < VehicleServerList.size(); i++)
     {
