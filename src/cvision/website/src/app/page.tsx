@@ -47,7 +47,7 @@ function useFirebaseAuth() {
 }
 
 /* ==================== TYPES ==================== */
-// ADDED: lane_id / approach_id / signal_group / signal_status
+// ADDED: intersection_id/lane_id / approach_id / signal_group / signal_status
 type Vehicle = {
   id: string;
   lat: number;
@@ -55,6 +55,7 @@ type Vehicle = {
   speed_mps?: number;
   heading_deg?: number;
   ts?: number;
+  intersection_id?: string | number;       // ← added
   lane_id?: string | number;       // ← added
   approach_id?: string | number;   // ← added
   signal_group?: string | number;  // ← added
@@ -319,11 +320,11 @@ export default function Page() {
         // Normalize timestamp
         const ts = raw.ts != null ? Number(raw.ts) : raw.timestamp != null ? Number(raw.timestamp) : undefined;
 
-        // lane/approach/signal group/signal_status
+        // intersection_id/lane_id/approach_id/signal group/signal_status
+        const intersection_id = (raw.intersection_id ?? raw.intersectionId) as string | number | undefined;
         const lane_id = (raw.lane_id ?? raw.laneId) as string | number | undefined;
         const approach_id = (raw.approach_id ?? raw.approachId) as string | number | undefined;
-        const signal_group = (raw.signal_group ?? raw.signalGroup ?? raw.signal_group_id ?? raw.signalGroupId) as
-          | string | number | undefined;
+        const signal_group = (raw.signal_group ?? raw.signalGroup ?? raw.signal_group_id ?? raw.signalGroupId) as | string | number | undefined;
         const signal_status = (raw.signal_status ?? raw.signalStatus) as string | number | undefined;
 
         return {
@@ -333,6 +334,7 @@ export default function Page() {
           speed_mps,
           heading_deg,
           ts,
+          intersection_id,
           lane_id,
           approach_id,
           signal_group,
@@ -442,6 +444,7 @@ export default function Page() {
       const heading = el.dataset.headingDeg ? Math.round(Number(el.dataset.headingDeg)) : undefined;
       const ts = el.dataset.ts ? Number(el.dataset.ts) : undefined;
       const mph = isFinite(speedMps) ? speedMps * 2.23693629 : undefined;
+      const intersectionId = el.dataset.intersectionId;
       const laneId = el.dataset.laneId;
       const approachId = el.dataset.approachId;
       const signalGroup = el.dataset.signalGroup;
@@ -452,6 +455,7 @@ export default function Page() {
           <div><strong>GPS:</strong> ${lat.toFixed(6)}, ${lon.toFixed(6)}</div>
           ${isFinite(speedMps) ? `<div><strong>Speed:</strong> ${speedMps.toFixed(1)} m/s (${mph!.toFixed(1)} mph)</div>` : ""}
           ${heading !== undefined ? `<div><strong>Heading:</strong> ${heading}°</div>` : ""}
+          ${intersectionId ? `<div><strong>Intersection ID:</strong> ${intersectionId}</div>` : ""}
           ${laneId ? `<div><strong>Lane ID:</strong> ${laneId}</div>` : ""}
           ${approachId ? `<div><strong>Approach ID:</strong> ${approachId}</div>` : ""}
           ${signalGroup ? `<div><strong>Signal Group:</strong> ${signalGroup}</div>` : ""}
@@ -562,7 +566,9 @@ export default function Page() {
       else delete el.dataset.headingDeg;
       if (typeof v.ts === "number") el.dataset.ts = String(v.ts);
       else delete el.dataset.ts;
-      // ADDED: bind lane/approach/signal group/signal_status into dataset
+      // ADDED: bind intersection_id/lane_id/approach_id/signal group/signal_status into dataset
+      if (v.intersection_id != null) el.dataset.intersectionId = String(v.intersection_id);
+      else delete el.dataset.intersectionId;
       if (v.lane_id != null) el.dataset.laneId = String(v.lane_id);
       else delete el.dataset.laneId;
       if (v.approach_id != null) el.dataset.approachId = String(v.approach_id);
@@ -814,6 +820,16 @@ export default function Page() {
                   flyToSafe({ center: [v.lon, v.lat], zoom: 18 }, { force: true });
                 }
               }}
+              onClick={() => {
+              // When there's only one item, clicking the already-selected option
+              // won't trigger onChange, so do a one-time recenter here.
+              if (vehicles.length === 1 && selectedVehicleId) {
+                const v = vehicles[0];
+                if (typeof v.lon === "number" && typeof v.lat === "number") {
+                  flyToSafe({ center: [v.lon, v.lat], zoom: 18 }, { force: true });
+                }
+              }
+            }}
             >
               {vehicles.map((v) => (
                 <option key={v.id} value={v.id}>
