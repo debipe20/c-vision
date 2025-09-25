@@ -52,4 +52,5 @@ public:
     string spatDecoder(string spatPayload);
     string bsmDecoder(string bsmPayload);
     void get_min_max_elapsed_time_in_seconds(int minute_of_the_year, int ms_of_minute, double start_time, double min_end_time, double max_end_time);
-};
+    void compute_latency(int minute_of_the_year, int ms_of_minute);
+};  

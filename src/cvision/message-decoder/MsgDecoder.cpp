@@ -67,15 +67,6 @@ string MsgDecoder::mapDecoder(string mapPayload)
     string deleteFileName = "Map.map.payload";
     string jsonString{};
 
-    Json::Value jsonObject_config;
-    std::ifstream configJson("/nojournal/bin/mmitss-phase3-master-config.json");
-    string configJsonString((std::istreambuf_iterator<char>(configJson)), std::istreambuf_iterator<char>());
-    Json::CharReaderBuilder builder;
-    Json::CharReader *reader = builder.newCharReader();
-    string errors{};
-    reader->parse(configJsonString.c_str(), configJsonString.c_str() + configJsonString.size(), &jsonObject_config, &errors);
-    delete reader;
-
     Json::Value jsonObject;
     Json::StreamWriterBuilder writeBuilder;
     writeBuilder["commentStyle"] = "None";
@@ -85,7 +76,7 @@ string MsgDecoder::mapDecoder(string mapPayload)
     outputfile << "payload"
                << " "
                << "Map"
-               << " " << mapPayload << std::endl;
+               << " " << mapPayload << endl;
     outputfile.close();
 
     fmap = "Map.map.payload";
@@ -205,11 +196,12 @@ string MsgDecoder::spatDecoder(string spatPayload)
         }
 
         jsonString = Json::writeString(builder, jsonObject);
+
+        compute_latency(spatOut.timeStampMinute, spatOut.timeStampSec);
     }
 
-    double currentTime = static_cast<double>(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
-    cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Decoded SPaT Json is following: \n"
-         << jsonString << endl;
+    // double currentTime = static_cast<double>(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));
+    // cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Decoded SPaT Json is following: \n" << jsonString << endl;
 
     return jsonString;
 }
@@ -296,6 +288,31 @@ void MsgDecoder::get_min_max_elapsed_time_in_seconds(int minute_of_the_year, int
         start_time_s = -1.0;
         elapsed_time_s = -1.0;
     }
+}
+
+void MsgDecoder::compute_latency(int minute_of_the_year, int ms_of_minute)
+{
+    // Step 1: Get the current time with millisecond precision (in seconds + milliseconds)
+    auto now = std::chrono::system_clock::now();
+    auto duration = now.time_since_epoch();
+    
+    // Convert to seconds + fractional part (milliseconds)
+    double currentTime = static_cast<double>(std::chrono::duration_cast<std::chrono::milliseconds>(duration).count()) / 1000.0;
+    
+    // Step 2: Convert minute of the year and ms of the minute into epoch time
+    // Convert minute of the year to total seconds from the beginning of the year
+    long total_seconds_in_year = minute_of_the_year * 60; // Total seconds from the start of the year
+    
+    // Add the milliseconds of the minute
+    double messageTime = static_cast<double>(total_seconds_in_year) + ms_of_minute / 1000.0;
+
+    // Step 3: Compute the latency by subtracting the message time from the current time
+    double latency = currentTime - messageTime;
+
+    // Step 4: Output the latency (or handle it as needed)
+    std::cout << "Current Time: " << currentTime << " seconds" << std::endl;
+    std::cout << "Message Time: " << messageTime << " seconds" << std::endl;
+    std::cout << "Latency: " << latency << " seconds" << std::endl;
 }
 
 MsgDecoder::~MsgDecoder()
