@@ -31,6 +31,7 @@ msg_decoder_port = config["PortNumber"]["MessageDecoder"]
 client_info = (hostIp, msg_decoder_port)
 
 file_name = "bsm-hex.txt"
+# file_name = "bsm-hex-mixed-id.txt"
 # file = open(file_name, "r")
 send_period = 0.1  # 10 Hz
 next_time = time.perf_counter()

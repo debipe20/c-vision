@@ -62,6 +62,6 @@ public:
     int getTimedOutVehicleID();
     double getCurrentTimeInSeconds();
     void printVehicleServerList();
-    string updateBsmJsonString(const string& inJson, int laneID, int approachID, int signalGroup, string signalStatus);
+    string updateBsmJsonString(const string& inJson, int intersectionID, int laneID, int approachID, int signalGroup, string signalStatus);
 };
 

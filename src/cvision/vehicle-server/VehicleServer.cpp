@@ -87,6 +87,7 @@ void VehicleServer::managingVehicleServerList(BasicVehicle basicVehicle)
 string VehicleServer::processBSM(string jsonString, BasicVehicle basicVehicle)
 {
     int vehicleID{};
+    int intersectionID{};
     int laneID{};
     int approachID{};
     int signalGroup{};
@@ -105,15 +106,17 @@ string VehicleServer::processBSM(string jsonString, BasicVehicle basicVehicle)
     findVehicleIDInList->mapManager.deleteMap();
     findVehicleIDInList->vehicleStatusManager.manageMapStatusInAvailableMapList(findVehicleIDInList->mapManager);
     
+    intersectionID = findVehicleIDInList->vehicleStatusManager.getIntersectionID();
     laneID = findVehicleIDInList->vehicleStatusManager.getLaneID();
     approachID = findVehicleIDInList->vehicleStatusManager.getApproachID();
     signalGroup = findVehicleIDInList->vehicleStatusManager.getSignalGroup();
     
+    findVehicleIDInList->vehicleIntersectionID = intersectionID;
     findVehicleIDInList->vehicleLaneID = laneID;
     findVehicleIDInList->vehicleApproachID = approachID;
     findVehicleIDInList->vehicleSignalGroup = signalGroup;
      
-    updatedJsonString = updateBsmJsonString(jsonString, laneID, approachID, signalGroup, findVehicleIDInList->vehicleSignalStatus);
+    updatedJsonString = updateBsmJsonString(jsonString, intersectionID, laneID, approachID, signalGroup, findVehicleIDInList->vehicleSignalStatus);
 
     return updatedJsonString;
 }
@@ -326,7 +329,7 @@ void VehicleServer::printVehicleServerList()
         cout << "[" << fixed << showpoint << setprecision(2) << timeStamp << "] Vehicle Server Lists is empty" << endl;
 }
 
-string VehicleServer::updateBsmJsonString(const string& inJson, int laneID, int approachID, int signalGroup, string signalStatus) 
+string VehicleServer::updateBsmJsonString(const string& inJson, int intersectionID, int laneID, int approachID, int signalGroup, string signalStatus) 
 {
     string updatedJsonString{};
     Json::CharReaderBuilder rbuilder;
@@ -342,6 +345,7 @@ string VehicleServer::updateBsmJsonString(const string& inJson, int laneID, int 
     }
 
     // create path if missing, then set fields
+    jsonObject["BasicVehicle"]["intersectionID"] = intersectionID;
     jsonObject["BasicVehicle"]["laneID"] = laneID;
     jsonObject["BasicVehicle"]["approachID"] = approachID;
     jsonObject["BasicVehicle"]["signalGroup"] = signalGroup;

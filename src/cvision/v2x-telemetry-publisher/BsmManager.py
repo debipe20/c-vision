@@ -82,6 +82,7 @@ class BsmManager:
         elevation = jsonString['BasicVehicle']['position']['elevation_Meter']
         speed_mps = jsonString['BasicVehicle']['speed_MeterPerSecond']
         heading_degree = jsonString['BasicVehicle']['heading_Degree']
+        intersection_id = jsonString['BasicVehicle']['intersectionID']
         lane_id = jsonString['BasicVehicle']['laneID']
         approach_id = jsonString['BasicVehicle']['approachID']
         signal_group = jsonString['BasicVehicle']['signalGroup']
@@ -95,6 +96,7 @@ class BsmManager:
             "elev": elevation,
             "speed": speed_mps,
             "heading": heading_degree,
+            "intersection_id": intersection_id,
             "lane_id": lane_id,
             "approach_id": approach_id,
             "signal_group": signal_group,

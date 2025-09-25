@@ -7,6 +7,9 @@
 		"MessageDecoder":50002,
 		"V2XDataManager":50003,
 		"VehicleServer":50004,
+		"BsmSender": 50005,
+		"SpatSender":50006,
+		"MapSender": 50007,
 		"MessageDecoder": 1516,
 		"BsmGenerator": 5398,
 		"VehicleController": 1025,
@@ -14,7 +17,7 @@
 		"SpatReceiver": 6053
 	},
 	"VehicleInformation": {
-		"EgoVehicleId": "f03ad623"
+		"EgoVehicleId": "265012"
 
 	},
 	"IntersectionInformation": {

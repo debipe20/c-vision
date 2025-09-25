@@ -1,6 +1,9 @@
 Terminal Setup Instruction:
-1. Map-Spat-Sender -> printf "\033]0;Map-Sat-Sender\a"
-2. V2X-Data-Listener -> printf "\033]0;V2X-Data-Listener\a"
-3. Message-Decoder -> printf "\033]0;Message-Decoder\a"
-4. Vehicle-Sever -> printf "\033]0;Vehicle-Server\a"
-5. V2X-Data-Manager -> printf "\033]0;V2X-Data-Manager\a"
+1. MAP-SPaT-Sender -> printf "\033]0;Map-Sat-Sender\a" 							-> Desktop/debashis-workspace/src/cvision/infrastructure-to-cloud-interface
+2. V2X-Data-Listener -> printf "\033]0;V2X-Data-Listener\a"						-> Desktop/debashis-workspace/src/cvision/infrastructure-to-cloud-interface
+3. Message-Decoder -> printf "\033]0;Message-Decoder\a"							-> Desktop/debashis-workspace/src/cvision/message-decoder
+4. Vehicle-Sever -> printf "\033]0;Vehicle-Server\a"							-> Desktop/debashis-workspace/src/cvision/vehicle-server 
+5. V2X-Telemetry-Publisher -> printf "\033]0;V2X-Telemetry-Publisher\a"			-> Desktop/debashis-workspace/src/cvision/v2x-telemetry-publisher
+6. V2X-Website -> printf "\033]0;V2X-Website\a"									-> Desktop/debashis-workspace/src/cvision/website
+7. BSM-Sender ->printf "\033]0;Bsm-Sender\a"									-> Desktop/debashis-workspace/src/cvision/conneted-vehicle-to-cloud-interface
+8. Vehicle-Status-Listener -> printf "\033]0;Vehcile-Status-Listener\a"			-> Desktop/debashis-workspace/src/cvision/conneted-vehicle-to-cloud-interface

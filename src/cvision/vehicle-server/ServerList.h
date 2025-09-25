@@ -14,6 +14,7 @@ struct ServerList
     double vehicleLatitude{};
     double vehicleLongitude{};
     double vehicleElevation{};
+    int vehicleIntersectionID{};
     int vehicleLaneID{};
     int vehicleApproachID{};
     int vehicleSignalGroup{};
@@ -29,6 +30,7 @@ struct ServerList
         vehicleLatitude = 0.0;
         vehicleLongitude = 0.0;
         vehicleElevation = 0.0;
+        vehicleIntersectionID = 0;
         vehicleLaneID = 0;
         vehicleApproachID = 0;
         vehicleSignalGroup = 0;
