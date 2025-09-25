@@ -137,7 +137,7 @@ def main(args):
                 ref_latest.set({
                     "msg_type": msg_type,
                     "posix_timestamp": time.time(),
-                    "verbose_timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                    # "verbose_timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
                     "payload": payload
                 })
 
