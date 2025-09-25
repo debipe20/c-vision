@@ -72,11 +72,16 @@ ref.on('value', (snapshot) => {
   const data = snapshot.val();
   if (!data) return;
 
-  console.log('Latest V2X message received:', data);
+  if (data && data.posix_timestamp) {
+    // const now = Date.now() / 1000; // current time in seconds
+    // const latency = now - data.posix_timestamp; // in seconds
+    // console.log(`Latency: ${latency.toFixed(3)} seconds`);
 
-  // fs.writeFileSync('latest.json', JSON.stringify(data, null, 2));
-  
-  // const udpPayload = Buffer.from(JSON.stringify(data)); // Send full json field
+    const latencyMs = Date.now() - (data.posix_timestamp * 1000);
+    console.log(`Latency: ${latencyMs.toFixed(0)} ms`); 
+  }
+
+  // console.log('Latest V2X message received:', data);
   
   const udpPayload = Buffer.from(data.payload); // Send only the payload field
   udpClient.send(udpPayload, 0, udpPayload.length, receiver_port, host_ip, (err) => {

@@ -100,24 +100,26 @@ def main(args):
                         continue  # No Payload prefix found, skip this message
 
                     payload = decoded_data[prefix_index + len(payload_prefix):].strip()
-                    print(f"Received payload (with header): {payload}")
+                    # print(f"Received payload (with header): {payload}")
+                    # print("Received payload (with header)")
 
                 else:
                     # Process without header (only payload)
                     payload = decoded_data.strip()
-                    print(f"Received payload (without header): {payload}")
+                    # print(f"Received payload (without header): {payload}")
+                    # print("Received payload (without header)")
 
                 # Detect payload type
                 if payload.startswith(map_identifier):
-                    ref = db.reference('/MAPData')
+                    # ref = db.reference('/MAPData')
                     msg_type = "MAP"
 
                 elif payload.startswith(spat_identifier):
-                    ref = db.reference('/SPaTData')
+                    # ref = db.reference('/SPaTData')
                     msg_type = "SPaT"
 
                 elif payload.startswith(bsm_identifier):
-                    ref = db.reference('/BSMData')
+                    # ref = db.reference('/BSMData')
                     msg_type = "BSM"
 
                 else:
@@ -125,16 +127,17 @@ def main(args):
                     continue
 
                 # Send to Firebase
-                ref.set({
-                    "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-                    "payload": payload
-                })
+                # ref.set({
+                #     "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                #     "payload": payload
+                # })
 
                 # Send to unified /LatestV2XMessage
                 ref_latest = db.reference('/LatestV2XMessage')
                 ref_latest.set({
-                    "type": msg_type,
-                    "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+                    "msg_type": msg_type,
+                    "posix_timestamp": time.time(),
+                    "verbose_timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
                     "payload": payload
                 })
 
