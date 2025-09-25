@@ -180,16 +180,6 @@ node vehicle-status-listener.js
 
 ---
 
-## Notes
-- Both scripts use user home directories to locate the service account and config; adjust if your layout differs.
-- If you need Base64 for payloads in RTDB, encode in the Python sender:
-  ```python
-  import base64
-  payload_b64 = base64.b64encode(data.encode('utf-8')).decode('ascii')
-  ```
-
----
-
 ## Support
 If you encounter a different stack trace or behavior, capture:
 - OS, Python/Node versions
