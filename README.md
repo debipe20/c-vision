@@ -33,8 +33,8 @@ This repository serves as a central place for development, testing, and document
 ### Installation
 Clone the repository:
 ```bash
-git clone https://github.com/debipe20/debashis-workspace.git
-cd debashis-workspace
+git clone https://github.com/debipe20/c-vision.git
+cd c-vision
 ```
 
 ---

@@ -1,0 +1,73 @@
+{
+    "MsgType": "SPaT",
+    "Spat": {
+        "intersectionState": {
+            "intersectionID": 29080,
+            "regionalID": 0
+        },
+        "minuteOfYear": 384617,
+        "msOfMinute": 23906,
+        "msgCnt": 0,
+        "phaseState": [
+            {
+                "currState": "red",
+                "maxEndTime": 36000,
+                "minEndTime": 10479,
+                "phaseNo": 1,
+                "startTime": 36001
+            },
+            {
+                "currState": "red",
+                "maxEndTime": 36000,
+                "minEndTime": 10479,
+                "phaseNo": 2,
+                "startTime": 36001
+            },
+            {
+                "currState": "red",
+                "maxEndTime": 36000,
+                "minEndTime": 10479,
+                "phaseNo": 3,
+                "startTime": 36001
+            },
+            {
+                "currState": "protected_green",
+                "maxEndTime": 36000,
+                "minEndTime": 10439,
+                "phaseNo": 4,
+                "startTime": 36001
+            },
+            {
+                "currState": "red",
+                "maxEndTime": 36000,
+                "minEndTime": 10479,
+                "phaseNo": 5,
+                "startTime": 36001
+            },
+            {
+                "currState": "red",
+                "maxEndTime": 36000,
+                "minEndTime": 10479,
+                "phaseNo": 6,
+                "startTime": 36001
+            },
+            {
+                "currState": "red",
+                "maxEndTime": 36000,
+                "minEndTime": 10479,
+                "phaseNo": 7,
+                "startTime": 36001
+            },
+            {
+                "currState": "protected_green",
+                "maxEndTime": 36000,
+                "minEndTime": 10439,
+                "phaseNo": 8,
+                "startTime": 36001
+            }
+        ],
+        "status": "0000000001000000"
+    },
+    "Timestamp_posix": 1758766644.295264,
+    "Timestamp_verbose": "2025-09-25 02:17:24.295"
+}
