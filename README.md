@@ -1,7 +1,6 @@
 # Cloud-based Vehicle-to-Infrastructure for Smart Intelligent On-road Navigation (C-VISION)
 
-A personal GitHub workspace for experimenting with **Cloud Computing** and **V2I (Vehicle-to-Infrastructure)** related projects.  
->>>>>>> main
+A personal GitHub workspace for experimenting with **Cloud Computing** and **V2I (Vehicle-to-Infrastructure)** related projects.
 This repository serves as a central place for development, testing, and documentation of ongoing work.
 
 ---
