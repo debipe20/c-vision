@@ -1,6 +1,7 @@
-# debashis-workspace
+# Cloud-based Vehicle-to-Infrastructure for Smart Intelligent On-road Navigation (C-VISION)
 
-A personal GitHub workspace for experimenting with **Cloud Computing** and **V2X (Vehicle-to-Everything)** related projects.  
+A personal GitHub workspace for experimenting with **Cloud Computing** and **V2I (Vehicle-to-Infrastructure)** related projects.  
+>>>>>>> main
 This repository serves as a central place for development, testing, and documentation of ongoing work.
 
 ---
