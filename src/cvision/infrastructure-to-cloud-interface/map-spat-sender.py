@@ -15,8 +15,8 @@ Uploads structured data to Firebase Realtime Database.
 It also updates a unified `/LatestV2XMessage` node with the latest message for real-time forwarding.
 
 Usage:
-    python3 map-spatsender.py               # without header, payload only
-    python3 map-spatsender.py --header      # with 'Payload=' prefix header
+    python3 map-spat-sender.py               # without header, payload only
+    python3 map-spat-sender.py --header      # with 'Payload=' prefix header
 
 **********************************************************************************
 """
