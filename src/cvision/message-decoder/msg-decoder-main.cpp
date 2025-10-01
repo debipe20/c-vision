@@ -26,11 +26,11 @@ int main() {
     const char* home = getenv("HOME");
     if (!home) return 1;
 
-    const string config_file_path = string(home) + "/Desktop/debashis-workspace/config/anl-master-config.json";
+    const string config_file_path = string(home) + "/Desktop/c-vision/config/anl-master-config.json";
 
 
     Json::Value jsonObject;
-    // std::ifstream configJson("/home/debashis/Desktop/debashis-workspace/config/anl-master-config.json");
+    // std::ifstream configJson("/home/debashis/Desktop/c-vision/config/anl-master-config.json");
     std::ifstream configJson(config_file_path);
     string configJsonString((std::istreambuf_iterator<char>(configJson)), std::istreambuf_iterator<char>());
     Json::CharReaderBuilder builder;
