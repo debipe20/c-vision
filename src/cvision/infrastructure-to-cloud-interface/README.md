@@ -28,8 +28,8 @@ This project enables real-time V2X (Vehicle-to-Everything) communication through
 
 Create a JSON file at:
 
-- Linux: `~/Desktop/debashis-workspace/config/anl-master-config.json`
-- Windows: `C:\Users\<your-user>\Documents\debashis-workspace\config\anl-master-config.json`
+- Linux: `~/Desktop/c-vision/config/anl-master-config.json`
+- Windows: `C:\Users\<your-user>\Documents\c-vision\config\anl-master-config.json`
 
 Example:
 

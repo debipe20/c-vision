@@ -28,12 +28,12 @@ let service_account_path;  // Define it here so it's accessible later
 const currentOS = os.platform();
 
 if (currentOS === 'linux') {
-  configFilePath = path.join(os.homedir(), 'Desktop', 'debashis-workspace', 'config', 'anl-master-config.json');
+  configFilePath = path.join(os.homedir(), 'Desktop', 'c-vision', 'config', 'anl-master-config.json');
   service_account_path = path.join(os.homedir(), 'Documents', 'cvision-firebase-key.json');
 } 
 
 else if (currentOS === 'win32') {
-  configFilePath = path.join('C:', 'Users', 'ddas', 'Documents', 'debashis-workspace', 'config', 'anl-master-config.json');
+  configFilePath = path.join('C:', 'Users', 'ddas', 'Documents', 'c-vision', 'config', 'anl-master-config.json');
   service_account_path = path.join('C:', 'Users', 'ddas', 'Documents', 'cvision-firebase-key.json');
 }
 

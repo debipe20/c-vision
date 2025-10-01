@@ -20,7 +20,7 @@ This repo contains two scripts that bridge connected-vehicle data to Firebase an
 ### Configuration JSON (`anl-master-config.json`)
 Expected at:
 - **Windows**: `C:\Users\<YOU>\Documents\debashis-workspace\config\anl-master-config.json`
-- **Linux**: `/home/<you>/Documents/debashis-workspace/config/anl-master-config.json`
+- **Linux**: `/home/<you>/Documents/c-vision/config/anl-master-config.json`
 
 Minimal required fields:
 This is a sample Json:

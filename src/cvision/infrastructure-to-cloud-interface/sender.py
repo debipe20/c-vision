@@ -46,13 +46,13 @@ if current_os == "Linux":
     service_account_path = os.path.expanduser(
         "~") + "/Documents/cvision-firebase-key.json"
     config_file_path = os.path.join(os.path.expanduser(
-        "~"), "Desktop", "debashis-workspace", "config", "anl-master-config.json")
+        "~"), "Desktop", "c-vision", "config", "anl-master-config.json")
 
 elif current_os == "Windows":  # For Windows
     service_account_path = os.path.join(os.path.expanduser(
         "~"), "Documents", "cvision-firebase-key.json")
     config_file_path = os.path.join(
-        "C:\\", "Users", "ddas", "Documents", "debashis-workspace", "config", "anl-master-config.json")
+        "C:\\", "Users", "ddas", "Documents", "c-vision", "config", "anl-master-config.json")
 
 else:
     raise OSError(f"Unsupported operating system: {current_os}")

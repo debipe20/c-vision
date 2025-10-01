@@ -22,7 +22,7 @@ node -v
 1.  **Clone the repository**:
 ```bash
 git clone https://github.com/debipe20/c-vision
-cd c-vision
+cd debashis-workspace
 git checkout <branch_name>
 ```
 
