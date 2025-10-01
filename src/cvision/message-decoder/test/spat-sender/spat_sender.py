@@ -9,10 +9,10 @@ import platform
 current_os = platform.system()
         
 if current_os == "Linux":
-    config_file_path = os.path.join(os.path.expanduser("~"), "Desktop", "debashis-workspace", "config", "anl-master-config.json")
+    config_file_path = os.path.join(os.path.expanduser("~"), "Desktop", "c-vision", "config", "anl-master-config.json")
 
 elif current_os == "Windows":
-    config_file_path = os.path.join("C:\\", "Users", "ddas", "debashis-workspace", "config", "anl-master-config.json")
+    config_file_path = os.path.join("C:\\", "Users", "ddas", "c-vision", "config", "anl-master-config.json")
 
 else:
     raise OSError(f"Unsupported operating system: {current_os}")

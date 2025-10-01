@@ -85,6 +85,8 @@ string MsgDecoder::mapDecoder(string mapPayload)
     /// instance class LocAware (Map Engine)
     LocAware *plocAwareLib = new LocAware(fmap, singleFrame);
     intersectionID = plocAwareLib->getIntersectionIdByName(intersection_Name);
+    cout << "Intersection ID is " << intersectionID << endl;
+    
     mapName = "Map" + std::to_string(intersectionID);
     jsonObject["MsgType"] = "MAP";
     jsonObject["IntersectionName"] = mapName;
