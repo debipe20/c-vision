@@ -10,7 +10,7 @@ export type StaticIntersectionMap = Record<string, StaticIntersection>;
 
 /** Configure your 5 intersections here */
 export const INTERSECTIONS: StaticIntersectionMap = {
-  "2351": {
+  "29080": {
     name: "Kearney Rd & WaterTower Rd",
     lat: 41.711326,
     lon: -87.992046,

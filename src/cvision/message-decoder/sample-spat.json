@@ -2,72 +2,72 @@
     "MsgType": "SPaT",
     "Spat": {
         "intersectionState": {
-            "intersectionID": 0,
+            "intersectionID": 29080,
             "regionalID": 0
         },
-        "minuteOfYear": 343922,
-        "msOfMinute": 30750,
+        "minuteOfYear": 382693,
+        "msOfMinute": 14330,
         "msgCnt": 0,
         "phaseState": [
             {
                 "currState": "red",
                 "maxEndTime": 36000,
-                "minEndTime": 1608,
+                "minEndTime": 7983,
                 "phaseNo": 1,
                 "startTime": 36001
             },
             {
-                "currState": "permissive_yellow",
-                "maxEndTime": 1508,
-                "minEndTime": 1508,
+                "currState": "protected_green",
+                "maxEndTime": 36000,
+                "minEndTime": 7943,
                 "phaseNo": 2,
                 "startTime": 36001
             },
             {
                 "currState": "red",
-                "maxEndTime": 1518,
-                "minEndTime": 1518,
+                "maxEndTime": 36000,
+                "minEndTime": 7983,
                 "phaseNo": 3,
                 "startTime": 36001
             },
             {
                 "currState": "red",
-                "maxEndTime": 1908,
-                "minEndTime": 1608,
+                "maxEndTime": 36000,
+                "minEndTime": 7983,
                 "phaseNo": 4,
                 "startTime": 36001
             },
             {
                 "currState": "red",
                 "maxEndTime": 36000,
-                "minEndTime": 1608,
+                "minEndTime": 7983,
                 "phaseNo": 5,
                 "startTime": 36001
             },
             {
-                "currState": "permissive_yellow",
-                "maxEndTime": 1508,
-                "minEndTime": 1508,
+                "currState": "protected_green",
+                "maxEndTime": 36000,
+                "minEndTime": 7943,
                 "phaseNo": 6,
                 "startTime": 36001
             },
             {
                 "currState": "red",
-                "maxEndTime": 1518,
-                "minEndTime": 1518,
+                "maxEndTime": 36000,
+                "minEndTime": 7983,
                 "phaseNo": 7,
                 "startTime": 36001
             },
             {
                 "currState": "red",
-                "maxEndTime": 1908,
-                "minEndTime": 1608,
+                "maxEndTime": 36000,
+                "minEndTime": 7983,
                 "phaseNo": 8,
                 "startTime": 36001
             }
         ],
-        "status": "0001000001000000"
+        "status": "0000000001000000"
     },
-    "Timestamp_posix": 1756324952.462956,
-    "Timestamp_verbose": "2025-08-27 20:02:32.462"
+    "Timestamp_posix": 1758653767.373194,
+    "Timestamp_verbose": "2025-09-23 18:56:07.373"
 }

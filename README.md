@@ -1,6 +1,7 @@
 # Cloud-based Vehicle-to-Infrastructure for Smart Intelligent On-road Navigation (C-VISION)
 
 A personal GitHub workspace for experimenting with **Cloud Computing** and **V2I (Vehicle-to-Infrastructure)** related projects.  
+>>>>>>> main
 This repository serves as a central place for development, testing, and documentation of ongoing work.
 
 ---
@@ -32,8 +33,8 @@ This repository serves as a central place for development, testing, and document
 ### Installation
 Clone the repository:
 ```bash
-git clone https://github.com/debipe20/debashis-workspace.git
-cd debashis-workspace
+git clone https://github.com/debipe20/c-vision.git
+cd c-vision
 ```
 
 ---
