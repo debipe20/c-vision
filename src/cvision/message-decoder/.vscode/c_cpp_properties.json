@@ -1,24 +1,21 @@
 {
-  "configurations": [
-    {
-      "browse": {
-        "databaseFilename": "${default}",
-        "limitSymbolsToIncludedHeaders": false
-      },
-      "includePath": [
-        "/home/carma/catkin_ws/devel/include/**",
-        "/opt/ros/noetic/include/**",
-        "/home/carma/catkin_ws/src/ros1_wiki/beginner_tutorials/include/**",
-        "/home/carma/catkin_ws/src/carma-test/include/**",
-        "/home/carma/catkin_ws/src/gps_umd/gps_common/include/**",
-        "/usr/include/**"
-      ],
-      "name": "ROS",
-      "intelliSenseMode": "gcc-x64",
-      "compilerPath": "/usr/bin/gcc",
-      "cStandard": "gnu11",
-      "cppStandard": "c++14"
-    }
-  ],
-  "version": 4
+    "configurations": [
+        {
+            "browse": {
+                "databaseFilename": "${default}",
+                "limitSymbolsToIncludedHeaders": false
+            },
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${env:HOME}/Desktop/deb-anl-xil/3rdparty/**",
+                "${env:HOME}/Desktop/deb-anl-xil/include/**"
+            ],
+            "name": "ROS",
+            "intelliSenseMode": "gcc-x64",
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "gnu11",
+            "cppStandard": "c++14"
+        }
+    ],
+    "version": 4
 }
