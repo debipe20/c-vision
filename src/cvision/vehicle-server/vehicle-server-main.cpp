@@ -57,7 +57,13 @@ int main()
         // cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "]Received Json String: \n" << receivedJsonString << endl;
         msgType = vehicleServer.getMessageType(receivedJsonString);
 
-        if (msgType == MsgEnum::DSRCmsgID_bsm)
+        if (msgType == 0) 
+        {
+            cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Received message type is zero" << endl;
+            continue;
+        }
+
+        else if (msgType == MsgEnum::DSRCmsgID_bsm)
         {
             cout << "[" << fixed << showpoint << setprecision(2) << currentTime << "] Received BSM Json String" << endl;
             basicVehicle.json2BasicVehicle(receivedJsonString);

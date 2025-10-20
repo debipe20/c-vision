@@ -32,7 +32,10 @@ int VehicleServer::getMessageType(string jsonString)
     bool parsingSuccessful = reader->parse(jsonString.c_str(), jsonString.c_str() + jsonString.size(), &jsonObject, &errors);
     delete reader;
 
-    if (parsingSuccessful)
+    if (!parsingSuccessful) 
+        return 0;
+
+    else if (parsingSuccessful)
     {
         if ((jsonObject["MsgType"]).asString() == "MAP")
             messageType = MsgEnum::DSRCmsgID_map;
