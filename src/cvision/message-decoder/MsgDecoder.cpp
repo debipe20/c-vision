@@ -199,7 +199,7 @@ string MsgDecoder::spatDecoder(string spatPayload)
 
         jsonString = Json::writeString(builder, jsonObject);
 
-        compute_latency(spatOut.timeStampMinute, spatOut.timeStampSec);
+        // compute_latency(spatOut.timeStampMinute, spatOut.timeStampSec);
     }
 
     // double currentTime = static_cast<double>(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()));

@@ -56,17 +56,50 @@ def main():
 
     try:
         while True:
-            data, addr = v2x_data_manager_socket.recvfrom(4096)
-            data = data.decode()
-            receivedMessage = json.loads(data)
-            print("Received following message:\n", receivedMessage)
-            
-            if receivedMessage["MsgType"]== "SPaT":
-                spatManager.manage_spat_data(receivedMessage)
+            data, addr = v2x_data_manager_socket.recvfrom(65536)
 
-            elif receivedMessage["MsgType"]== "BSM":
-                print("Received BSM")
-                bsmManager.manage_bsm_data(receivedMessage)
+            # --- Hardened decoding & JSON validation ---
+            if not data:
+                print(f"Ignoring empty UDP datagram from {addr}")
+                continue
+
+            try:
+                text = data.decode("utf-8", errors="strict").strip()
+            except UnicodeDecodeError as e:
+                print(f"Ignoring non-UTF8 datagram from {addr}: {e}")
+                continue
+
+            if not text or text[0] not in "{[":
+                # Quick filter for clearly non-JSON messages
+                preview = text.replace("\n", "\\n")[:200]
+                print(f"Ignoring non-JSON datagram from {addr}: '{preview}'")
+                continue
+
+            try:
+                receivedMessage = json.loads(text)
+            except json.JSONDecodeError as e:
+                preview = text.replace("\n", "\\n")[:400]
+                print(f"Bad JSON from {addr}: {e}. Payload (truncated): '{preview}'")
+                continue
+            # --- End hardening ---
+
+            # print("Received following message:\n", receivedMessage)
+
+            try:
+                msg_type = receivedMessage.get("MsgType")
+                if msg_type == "SPaT":
+                    spatManager.manage_spat_data(receivedMessage)
+                    print("Received SPaT & updated intersection status")
+                    
+                elif msg_type == "BSM":
+                    bsmManager.manage_bsm_data(receivedMessage)
+                    print("Received BSM & updated vehicle status")
+                
+                else:
+                    print(f"Unknown MsgType; dropping: {msg_type}")
+            
+            except Exception as handler_err:
+                print(f"Handler error for {receivedMessage.get('MsgType')}: {handler_err}")
 
     except KeyboardInterrupt:
         print("\nKeyboardInterrupt received. Shutting down gracefully...")
@@ -79,11 +112,7 @@ def main():
             v2x_data_manager_socket.close()
             print("Socket closed.")
         finally:
-            # Ensure we don't fall through to the __main__ guard below
             sys.exit(0)
-    # ----------------------------------------------------------------
 
-    v2x_data_manager_socket.close()
-    
 if __name__ == "__main__":
     main()

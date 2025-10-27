@@ -1,1 +1,1 @@
-payload Map0 00124,"position":{"lat":41.7099747,"lon":-87.9920251,"elev":230.5},"kinematics":{"speed":9,"heading":359},"lane":{"lane_id":3,"approach_id":3},"signal":{"group":2,"status":"permissive_yellow"}}
+payload Map0 001282,"position":{"lat":41.7031725,"lon":-87.9918398,"elev":230.1},"kinematics":{"speed":11,"heading":358},"lane":{"lane_id":0,"approach_id":0},"signal":{"group":0,"status":"unknown"}}
