@@ -6,6 +6,10 @@ This repository serves as a central place for development, testing, and document
 
 ---
 
+<p align="center">
+  <img src="docs/images/cvision-architecture-overview.png" alt="C-VISION End-to-End Data Flow" width="920">
+</p>
+
 ## 📂 Repository Structure
 
 - **config/** – Configuration files for setting up and running projects  
